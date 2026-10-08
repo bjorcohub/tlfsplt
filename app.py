@@ -18,6 +18,16 @@ st.markdown("""
     /* Skjul uønskede Streamlit-elementer */
     #MainMenu, header, footer {visibility: hidden;}
 
+    /* Ytre ramme rundt hele appen */
+    .block-container {
+        padding: 2rem 2rem 2rem 2rem !important;
+        background: linear-gradient(180deg, #0f172a 0%, #0b1329 100%);
+        border: 1.5px solid #1e3a8a;
+        border-radius: 20px;
+        box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        margin-top: 1.5rem;
+    }
+
     /* Tittel-styling */
     .main-title {
         color: #fbbf24;
@@ -81,12 +91,12 @@ st.markdown("""
 
     /* Resultat-kort Standard */
     .result-box {
-        background: linear-gradient(180deg, #0f172a 0%, #0b1329 100%);
+        background: linear-gradient(180deg, #0b1329 0%, #070d1e 100%);
         border: 1.5px solid #1d3557;
         border-radius: 16px;
         padding: 24px;
         margin-top: 15px;
-        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
     }
 
     /* Resultat-kort i Presentasjonsmodus */
@@ -289,7 +299,6 @@ st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 # INNDATAFELTER (KUN SYNLIG NÅR PRESENTASJON ER AV)
 if not st.session_state["presentasjon"]:
-    # BOKS FOR TEKSTLIMING STÅR NÅ ÅPEN HELE TIDEN
     st.markdown("<label>HENT INFORMASJON FRA KUNDEBILDE (VALGFRITT)</label>", unsafe_allow_html=True)
     lim_inn_tekst = st.text_area("", placeholder="Lim inn tekst fra kundebildet her...", height=80, label_visibility="collapsed")
     
