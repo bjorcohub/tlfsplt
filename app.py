@@ -22,11 +22,12 @@ st.markdown("""
     .main-title {
         color: #fbbf24;
         font-weight: 800;
-        font-size: 28px;
+        font-size: 26px;
         display: flex;
         align-items: center;
         gap: 12px;
         letter-spacing: -0.5px;
+        white-space: nowrap;
     }
 
     /* Form-labels */
@@ -274,14 +275,14 @@ def parse_kopiert_tekst(tekst):
 
 # --- HOVED-GRENSESNITT ---
 
-# TOPPBAR (TITTEL + PRESENTASJONSSWITCH + MÅNEDSSWITCH)
-col_title, col_toggle, col_mnd_select = st.columns([2, 1, 1])
+# TOPPBAR MED BREDE KOLONNER SLIK AT INGEN TEKST BLIR AVSKÅRET
+col_title, col_toggle, col_mnd_select = st.columns([1.8, 1.3, 0.9])
 
 with col_title:
     st.markdown('<div class="main-title">🔵 Innbyttekalkulator</div>', unsafe_allow_html=True)
 
 with col_toggle:
-    st.toggle("📺 Presentasjon", key="presentasjon")
+    st.toggle("Presentasjon", key="presentasjon")
 
 with col_mnd_select:
     mnd_valg = st.radio(
