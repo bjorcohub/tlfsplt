@@ -7,25 +7,14 @@ import re
 # Sideoppsett med mørkt tema
 st.set_page_config(page_title="Innbyttekalkulator", layout="centered")
 
-# --- CSS STYLING FOR Å NÅ NØYAKTIG MATCH MED DESIGNET OG GOD LESBARHET ---
+# --- CSS STYLING ---
 st.markdown("""
 <style>
-    /* Bakgrunnsfarger */
     .stApp {
         background-color: #0b1329;
         color: #e2e8f0;
     }
     
-    /* Hovedkort container */
-    .main-card {
-        background-color: #0d1b3a;
-        border: 1px solid #1e293b;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 20px;
-    }
-
-    /* Tittel og overskrifter */
     .main-title {
         color: #f59e0b;
         font-weight: 700;
@@ -35,19 +24,16 @@ st.markdown("""
         gap: 10px;
     }
 
-    /* Gjøre felt-labler og radio-tekst helt lyse og synlige */
     label, div[data-widget="radio"] label p, .stWidgetLabel p {
         color: #e2e8f0 !important;
         font-weight: 600 !important;
         font-size: 14px !important;
     }
 
-    /* Styling for radioknappene (24 mnd / 36 mnd) */
     div[data-testid="stMarkdownContainer"] p {
         color: #ffffff !important;
     }
 
-    /* Input-felter styling */
     div[data-baseweb="input"] {
         background-color: #111d38 !important;
         border-color: #1e293b !important;
@@ -60,7 +46,6 @@ st.markdown("""
         font-weight: bold !important;
     }
 
-    /* Resultat-boks design */
     .result-box {
         background-color: #0b1736;
         border: 1px solid #1d3557;
@@ -82,13 +67,11 @@ st.markdown("""
         margin: 10px 0;
     }
 
-    /* Tekstfarger for resultater */
     .text-light { color: #94a3b8; }
     .text-white-bold { color: #ffffff; font-weight: bold; font-size: 20px; }
     .text-green-bold { color: #10b981; font-weight: bold; font-size: 20px; }
     .text-yellow-bold { color: #f59e0b; font-weight: bold; font-size: 20px; }
 
-    /* Custom CSS for knapper */
     div.stButton > button {
         width: 100%;
         border-radius: 8px;
@@ -150,7 +133,6 @@ def parse_kopiert_tekst(tekst):
 
 # --- HOVED-GRENSESNITT ---
 
-# TOPPBAR MED TITTEL OG PERIODEVELGER
 col_title, col_mnd_select = st.columns([2, 1])
 
 with col_title:
@@ -169,14 +151,12 @@ with col_mnd_select:
 st.markdown("---")
 
 # INNDATAFELTER
-col_pris = st.columns(1)[0]
-with col_pris:
-    ny_tlf_pris = st.number_input(
-        "1. NY MOBIL PRIS (KONTANT)", 
-        min_value=0, 
-        key="ny_tlf_pris", 
-        step=500
-    )
+ny_tlf_pris = st.number_input(
+    "1. NY MOBIL PRIS (KONTANT)", 
+    min_value=0, 
+    key="ny_tlf_pris", 
+    step=500
+)
 
 col_in1, col_in2 = st.columns(2)
 with col_in1:
@@ -198,17 +178,18 @@ with col_in2:
 # EKSPANDERBAR FOR GAMMEL SPLITT / TEKSTLIMING
 with st.expander("▶ Har kunden gjenstående gammel Splitt?"):
     lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=100)
+    
     if st.button("📋 Hent ut fra tekst"):
         if lim_inn_tekst.strip():
             m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
             if m_pris is not None:
-                st.session_state["gammel_mnd_pris"] = m_pris
+                st.session_state["gammel_mnd_pris"] = float(m_pris)
             if i_verdi is not None:
-                st.session_state["innbytteverdi"] = i_verdi
+                st.session_state["innbytteverdi"] = int(i_verdi)
             if m_igjen is not None:
-                st.session_state["gjenstaende_mnd"] = m_igjen
+                st.session_state["gjenstaende_mnd"] = int(m_igjen)
             st.rerun()
-            
+
     c_g1, c_g2 = st.columns(2)
     with c_g1:
         gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
@@ -216,8 +197,8 @@ with st.expander("▶ Har kunden gjenstående gammel Splitt?"):
         gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
 
 # --- BEREGNINGER ---
-total_rabatt = innbytteverdi + innbyttebonus
-effektiv_ny_totalpris = max(0.0, ny_tlf_pris - total_rabatt)
+total_rabatt = st.session_state["innbytteverdi"] + st.session_state["innbyttebonus"]
+effektiv_ny_totalpris = max(0.0, st.session_state["ny_tlf_pris"] - total_rabatt)
 ny_mnd_pris_ren = effektiv_ny_totalpris / mnd_valg if mnd_valg > 0 else 0
 
 mnd_fase_1 = min(st.session_state["gjenstaende_mnd"], mnd_valg)
@@ -230,7 +211,6 @@ total_mnd_fase_2 = ny_mnd_pris_ren
 # --- RESULTATKORT ---
 st.markdown('<div class="result-box">', unsafe_allow_html=True)
 
-# Rad 1: Effektiv ny mobil-sum
 st.markdown(f'''
 <div class="result-row">
     <span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
@@ -238,7 +218,6 @@ st.markdown(f'''
 </div>
 ''', unsafe_allow_html=True)
 
-# Rad 2: Ny mobil per mnd
 st.markdown(f'''
 <div class="result-row">
     <span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
@@ -249,7 +228,6 @@ st.markdown(f'''
 st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
 
 if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
-    # Rad 3: Totalpris første periode
     st.markdown(f'''
     <div class="result-row">
         <span class="text-light">Totalpris i første periode (inkl gammel Splitt avtale):</span>
@@ -257,7 +235,6 @@ if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd
     </div>
     ''', unsafe_allow_html=True)
 
-    # Rad 4: Pris i resterende periode
     st.markdown(f'''
     <div class="result-row">
         <span class="text-light">Pris i resterende periode:</span>
