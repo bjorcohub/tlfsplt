@@ -151,7 +151,7 @@ st.markdown("""
 if "ny_tlf_pris" not in st.session_state:
     st.session_state["ny_tlf_pris"] = 15990
 if "innbytteverdi" not in st.session_state:
-    st.session_state["innbytteverdi"] = 4368
+    st.session_state["innbytteverdi"] = 0  # <--- Satt til 0 som default
 if "innbyttebonus" not in st.session_state:
     st.session_state["innbyttebonus"] = 0
 if "gammel_mnd_pris" not in st.session_state:
