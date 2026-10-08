@@ -160,18 +160,18 @@ st.markdown("""
     div.stButton > button {
         width: 100%;
         border-radius: 10px;
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         color: white;
         font-weight: 700;
-        border: none;
-        padding: 10px 16px;
-        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);
+        border: 1px solid #475569;
+        padding: 6px 10px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         transition: all 0.2s;
     }
 
     div.stButton > button:hover {
-        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-        box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.6);
+        background: linear-gradient(135deg, #334155 0%, #475569 100%);
+        border-color: #38bdf8;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -260,22 +260,38 @@ with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
                 st.session_state["gjenstaende_mnd"] = int(m_igjen)
             st.rerun()
 
-# INNDATAFELTER
-ny_tlf_pris = st.number_input(
-    "1. NY MOBIL PRIS (KONTANT)", 
-    min_value=0, 
-    key="ny_tlf_pris", 
-    step=500
-)
+# INNDATAFELTER MED SØPPELBØTTE / NULLSTILL-KNAPPER
 
-col_in1, col_in2 = st.columns(2)
+# 1. NY MOBIL PRIS
+col_p1, col_p2 = st.columns([5, 1])
+with col_p1:
+    ny_tlf_pris = st.number_input(
+        "1. NY MOBIL PRIS (KONTANT)", 
+        min_value=0, 
+        key="ny_tlf_pris", 
+        step=500
+    )
+with col_p2:
+    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+    if st.button("🗑️", key="reset_ny_tlf", help="Nullstill ny mobil-pris"):
+        st.session_state["ny_tlf_pris"] = 0
+        st.rerun()
+
+# 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS
+col_in1, col_btn1, col_in2, col_btn2 = st.columns([5, 1, 5, 1])
+
 with col_in1:
     innbytteverdi = st.number_input(
-        "2. INNBYTTEVERDI GAMMEL MOBIL", 
+        "2. INNBYTTEVERDI", 
         min_value=0, 
         key="innbytteverdi", 
         step=100
     )
+with col_btn1:
+    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+    if st.button("🗑️", key="reset_innbytte", help="Nullstill innbytteverdi"):
+        st.session_state["innbytteverdi"] = 0
+        st.rerun()
 
 with col_in2:
     innbyttebonus = st.number_input(
@@ -284,12 +300,30 @@ with col_in2:
         key="innbyttebonus", 
         step=100
     )
+with col_btn2:
+    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+    if st.button("🗑️", key="reset_bonus", help="Nullstill innbyttebonus"):
+        st.session_state["innbyttebonus"] = 0
+        st.rerun()
 
-c_g1, c_g2 = st.columns(2)
+# GAMMEL SPLITT
+c_g1, c_gbtn1, c_g2, c_gbtn2 = st.columns([5, 1, 5, 1])
 with c_g1:
     gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
+with c_gbtn1:
+    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+    if st.button("🗑️", key="reset_gammel_pris", help="Nullstill gammel månedspris"):
+        st.session_state["gammel_mnd_pris"] = 0.0
+        st.rerun()
+
 with c_g2:
     gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
+with c_gbtn2:
+    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+    if st.button("🗑️", key="reset_gjenstaende", help="Nullstill gjenstående måneder"):
+        st.session_state["gjenstaende_mnd"] = 0
+        st.rerun()
+
 
 # --- BEREGNINGER ---
 total_rabatt = st.session_state["innbytteverdi"] + st.session_state["innbyttebonus"]
@@ -303,7 +337,7 @@ total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
 
-# --- RESULTATKORT UTEN INNRYKK PÅ HTML SÅ DET IKKE VISES SOM KODEBLOKK ---
+# --- RESULTATKORT ---
 
 har_fase1 = st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0
 
