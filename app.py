@@ -8,7 +8,7 @@ import re
 st.set_page_config(page_title="Kalkulator for Nedbetaling & Innbytte", layout="wide")
 st.title("📱 Nedbetalingskalkulator")
 
-# --- INITIALISER DEFAULT-VERDIER I SESSION STATE (SETT TIL 0 NÅR APPEN STARTER) ---
+# --- INITIALISER DEFAULT-VERDIER I SESSION STATE ---
 if "gammel_mnd_pris" not in st.session_state:
     st.session_state["gammel_mnd_pris"] = 0.0
 if "innbytteverdi" not in st.session_state:
@@ -88,7 +88,7 @@ if st.sidebar.button("📋 Hent ut informasjonen"):
     else:
         st.sidebar.error("Vennligst lim inn teksten først.")
 
-# Felter koblet direkte til session_state (starter nå på 0)
+# Felter koblet direkte til session_state
 gammel_mnd_pris = st.sidebar.number_input(
     "Gammel månedspris (kr/md)", 
     min_value=0.0, 
@@ -126,7 +126,7 @@ col3.metric("Effektiv ny totalpris", f"{effektiv_ny_totalpris:,.0f} kr")
 
 st.markdown("---")
 
-# --- HORISONTAL DELE-VISNING ---
+# --- HORISONTAL DELE-VISNING (KORT) ---
 st.subheader("💳 Månedlig nedbetalingsplan")
 
 if gammel_mnd_pris > 0 and gjenstaende_mnd > 0 and mnd_fase_2 > 0:
@@ -148,32 +148,61 @@ else:
 
 st.markdown("---")
 
-# --- TETTSITTENDE GRAF / STOLPER ---
-tidslinje_data = []
-for mnd in range(1, ny_nedbetaling_mnd + 1):
-    er_fase_1 = mnd <= gjenstaende_mnd
-    gammel_del = gammel_mnd_pris if er_fase_1 else 0
-    tidslinje_data.append({"Måned": f"Mnd {mnd}", "Del": "Ny Telefon", "Beløp": ny_mnd_pris_ren})
-    if gammel_del > 0:
-        tidslinje_data.append({"Måned": f"Mnd {mnd}", "Del": "Gammel Avtale", "Beløp": gammel_del})
+# --- ELEGANTE HORISONTAL TIDSLINJE-BLOKKER ---
+st.subheader("📅 Tidslinje over nedbetalingen")
 
-df = pd.DataFrame(tidslinje_data)
+tidslinje_faser = []
 
+if gammel_mnd_pris > 0 and gjenstaende_mnd > 0 and mnd_fase_2 > 0:
+    # Del 1
+    tidslinje_faser.append({
+        "Fase": f"Del 1: {total_mnd_fase_1:,.0f} kr/mnd ({mnd_fase_1} mnd)",
+        "Måneder": mnd_fase_1,
+        "Farge": "Del 1",
+        "Tekst": f"{total_mnd_fase_1:,.0f} kr/mnd første {mnd_fase_1} mnd"
+    })
+    # Del 2
+    tidslinje_faser.append({
+        "Fase": f"Del 2: {total_mnd_fase_2:,.0f} kr/mnd ({mnd_fase_2} mnd)",
+        "Måneder": mnd_fase_2,
+        "Farge": "Del 2",
+        "Tekst": f"{total_mnd_fase_2:,.0f} kr/mnd deretter {mnd_fase_2} mnd"
+    })
+else:
+    # Hele perioden som én fase
+    tidslinje_faser.append({
+        "Fase": f"Hele perioden: {ny_mnd_pris_ren:,.0f} kr/mnd ({ny_nedbetaling_mnd} mnd)",
+        "Måneder": ny_nedbetaling_mnd,
+        "Farge": "Del 2",
+        "Tekst": f"{ny_mnd_pris_ren:,.0f} kr/mnd i {ny_nedbetaling_mnd} mnd"
+    })
+
+df_tidslinje = pd.DataFrame(tidslinje_faser)
+
+# Bygg horisontal blokk-graf
 fig = px.bar(
-    df, 
-    x="Måned", 
-    y="Beløp", 
-    color="Del", 
-    labels={"Beløp": "Kr/md", "Måned": ""},
-    color_discrete_map={"Ny Telefon": "#0083B0", "Gammel Avtale": "#FF6B6B"}
+    df_tidslinje,
+    x="Måneder",
+    y=["Tidslinje"] * len(df_tidslinje),
+    color="Farge",
+    orientation='h',
+    text="Tekst",
+    color_discrete_map={"Del 1": "#FF6B6B", "Del 2": "#0083B0"}
+)
+
+fig.update_traces(
+    textposition='inside',
+    textfont=dict(size=16, color='white', family="Arial Black"),
+    insidetextanchor='middle'
 )
 
 fig.update_layout(
-    barmode='stack', 
-    bargap=0.0,
-    xaxis_tickangle=-45,
-    margin=dict(l=10, r=10, t=10, b=10),
-    legend_title_text=""
+    barmode='stack',
+    showlegend=False,
+    xaxis=dict(showgrid=False, showticklabels=False, title=""),
+    yaxis=dict(showgrid=False, showticklabels=False, title=""),
+    height=120,
+    margin=dict(l=0, r=0, t=10, b=10)
 )
 
 st.plotly_chart(fig, use_container_width=True)
