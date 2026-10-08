@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from PIL import Image
-import pytesseract
+from datetime import datetime
 import re
 
 # Sideoppsett
 st.set_page_config(page_title="Kalkulator for Nedbetaling & Innbytte", layout="wide")
-st.title("📱 Kalkulator for Nedbetaling & Innbytte (Splitt/SWAP)")
+st.title("📱 Kalkulator for Nedbetaling & Innbytte")
 
 # --- INITIALISER DEFAULT-VERDIER I SESSION STATE ---
 if "gammel_mnd_pris" not in st.session_state:
@@ -17,37 +16,42 @@ if "innbytteverdi" not in st.session_state:
 if "gjenstaende_mnd" not in st.session_state:
     st.session_state["gjenstaende_mnd"] = 11
 
-# --- FUNKSJON FOR GRATIS OCR-UTLESING ---
-def les_skjermbilde(bilde):
-    img = Image.open(bilde)
-    # Hent ut råtekst fra bildet
-    tekst = pytesseract.image_to_string(img, lang="nor+eng")
-    
+# --- FUNKSJON FOR TEKST-PARSING ---
+def parse_kopiert_tekst(tekst):
     mnd_pris = None
     innbytte = None
-    gjenstaende_belop = None
-    
-    # 1. Månedspris (f.eks. "228,75 /md." eller "228.75/md")
+    mnd_igjen = None
+
+    # 1. Månedspris (f.eks. "228,75 /md.")
     mnd_match = re.search(r'(\d+[\.,]\d+)\s*/?\s*md', tekst, re.IGNORECASE)
     if mnd_match:
         mnd_pris = float(mnd_match.group(1).replace(',', '.'))
 
-    # 2. Innbytteverdi (f.eks. "opptil 4368" eller "4368,- kr")
+    # 2. Innbytteverdi (f.eks. "opptil 4368,- kr")
     innbytte_match = re.search(r'opptil\s*(\d+)', tekst, re.IGNORECASE)
     if not innbytte_match:
         innbytte_match = re.search(r'(\d+)\s*[\.,-]?\s*kr', tekst, re.IGNORECASE)
     if innbytte_match:
-        innbytte = float(innbytte_match.group(1).replace('.', ''))
+        innbytte = float(innbytte_match.group(1))
 
-    # 3. Gjenstående beløp (f.eks. "Gjenstående beløp i Splitt-avtalen: 2516,25")
-    gjen_match = re.search(r'Gjenstående[^\d]*(\d+[\.,]\d+|\d+)', tekst, re.IGNORECASE)
-    if gjen_match:
-        gjenstaende_belop = float(gjen_match.group(1).replace(',', '.'))
+    # 3. Beregn gjenstående måneder ut fra datoperiode (f.eks. "05.09.2025 - 05.09.2027")
+    dato_match = re.search(r'(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})', tekst)
+    if dato_match:
+        try:
+            sluttdato = datetime.strptime(dato_match.group(2), "%d.%m.%Y")
+            idag = datetime.now()
+            # Antall måneder mellom i dag og sluttdato
+            differanse_mnd = (sluttdato.year - idag.year) * 12 + (sluttdato.month - idag.month)
+            mnd_igjen = max(1, differanse_mnd)
+        except Exception:
+            pass
 
-    # Beregn anslåtte gjenstående måneder basert på beløp / månedspris
-    mnd_igjen = None
-    if gjenstaende_belop and mnd_pris and mnd_pris > 0:
-        mnd_igjen = round(gjenstaende_belop / mnd_pris)
+    # Backup: Hvis datoberegning mislykkes, regn ut fra Gjenstående beløp / Månedspris
+    if mnd_igjen is None and mnd_pris and mnd_pris > 0:
+        gjen_match = re.search(r'Gjenstående[^\d]*(\d+[\.,]\d+|\d+)', tekst, re.IGNORECASE)
+        if gjen_match:
+            gjenstaende_belop = float(gjen_match.group(1).replace(',', '.'))
+            mnd_igjen = round(gjenstaende_belop / mnd_pris)
 
     return mnd_pris, innbytte, mnd_igjen
 
@@ -60,32 +64,33 @@ ny_nedbetaling_mnd = st.sidebar.selectbox("Nedbetalingstid ny telefon (mnd)", [2
 st.sidebar.markdown("---")
 st.sidebar.header("2. Eksisterende Avtale & Innbytte")
 
-# Bilde-opplasting for OCR
-uploaded_file = st.sidebar.file_uploader("Lim inn / Last opp skjermbilde", type=["png", "jpg", "jpeg"])
+# Tekstområde for å lim inn fra kundebilde
+lim_inn_tekst = st.sidebar.text_area("Lim inn tekst fra kundebildet her:", height=150)
 
-if uploaded_file:
-    if st.sidebar.button("🔍 Les av skjermbilde (Gratis OCR)"):
-        with st.spinner("Analyserer bilde..."):
-            m_pris, i_verdi, m_igjen = les_skjermbilde(uploaded_file)
-            funnet = False
-            
-            if m_pris is not None:
-                st.session_state["gammel_mnd_pris"] = m_pris
-                funnet = True
-            if i_verdi is not None:
-                st.session_state["innbytteverdi"] = i_verdi
-                funnet = True
-            if m_igjen is not None:
-                st.session_state["gjenstaende_mnd"] = m_igjen
-                funnet = True
-            
-            if funnet:
-                st.sidebar.success("Tallene ble hentet ut!")
-                st.rerun()  # Tvinger Streamlit til å laste inn feltene på nytt med de nye verdiene
-            else:
-                st.sidebar.warning("Fant ikke tallene automatisk. Sjekk bildet eller legg inn manuelt.")
+if st.sidebar.button("📋 Hent ut informasjonen fra teksten"):
+    if lim_inn_tekst.strip():
+        m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
+        funnet = False
+        
+        if m_pris is not None:
+            st.session_state["gammel_mnd_pris"] = m_pris
+            funnet = True
+        if i_verdi is not None:
+            st.session_state["innbytteverdi"] = i_verdi
+            funnet = True
+        if m_igjen is not None:
+            st.session_state["gjenstaende_mnd"] = m_igjen
+            funnet = True
+        
+        if funnet:
+            st.sidebar.success("Informasjonen ble oppdatert!")
+            st.rerun()
+        else:
+            st.sidebar.warning("Fant ikke alle tall i teksten. Sjekk innholdet.")
+    else:
+        st.sidebar.error("Vennligst lim inn teksten først.")
 
-# Felter koblet direkte til session_state via key
+# Felter koblet direkte til session_state
 gammel_mnd_pris = st.sidebar.number_input(
     "Gammel månedspris (kr/md)", 
     min_value=0.0, 
@@ -110,6 +115,8 @@ effektiv_ny_totalpris = max(0.0, ny_tlf_pris - innbytteverdi)
 ny_mnd_pris_ren = effektiv_ny_totalpris / ny_nedbetaling_mnd if ny_nedbetaling_mnd > 0 else 0
 
 mnd_fase_1 = min(gjenstaende_mnd, ny_nedbetaling_mnd)
+mnd_fase_2 = max(0, ny_nedbetaling_mnd - mnd_fase_1)
+
 total_mnd_fase_1 = ny_mnd_pris_ren + gammel_mnd_pris
 total_mnd_fase_2 = ny_mnd_pris_ren
 
@@ -117,23 +124,38 @@ total_mnd_fase_2 = ny_mnd_pris_ren
 col1, col2, col3 = st.columns(3)
 col1.metric("Ny Månedspris (Selve telefonen)", f"{ny_mnd_pris_ren:.2f} kr/md")
 col2.metric("Innbytterabatt", f"{innbytteverdi:,.0f} kr")
-col3.metric("Effektiv pris på ny telefon", f"{effektiv_ny_totalpris:,.0f} kr")
+col3.metric("Effektiv ny totalpris", f"{effektiv_ny_totalpris:,.0f} kr")
 
 st.markdown("---")
 
-st.subheader("📊 Månedlig kostnadsoversikt for kunden")
+# --- HORISONTAL DELE-VISNING (PERIODE 1 OG PERIODE 2) ---
+st.subheader("💳 Månedlig nedbetalingsplan for kunden")
 
-if gammel_mnd_pris > 0 and gjenstaende_mnd > 0:
-    st.info(f"""
-    * **Periode 1 (Måned 1 – {mnd_fase_1}):** **{total_mnd_fase_1:.2f} kr/md** 
-      *(Ny telefon: {ny_mnd_pris_ren:.2f} kr + Gammel avtale: {gammel_mnd_pris:.2f} kr)*
-    * **Periode 2 (Måned {mnd_fase_1 + 1} – {ny_nedbetaling_mnd}):** **{total_mnd_fase_2:.2f} kr/md** 
-      *(Når den gamle avtalen er ferdig nedbetalt)*
-    """)
+if gammel_mnd_pris > 0 and gjenstaende_mnd > 0 and mnd_fase_2 > 0:
+    col_p1, col_p2 = st.columns(2)
+    
+    with col_p1:
+        st.error(f"### 1️⃣ Begge avtaler ({mnd_fase_1} mnd)")
+        st.markdown(f"## **{total_mnd_fase_1:,.2f} kr/md**")
+        st.write(f"**Varighet:** {mnd_fase_1} måneder")
+        st.caption(f"*(Ny telefon: {ny_mnd_pris_ren:.2f} kr + Gammel avtale: {gammel_mnd_pris:.2f} kr)*")
+
+    with col_p2:
+        st.success(f"### 2️⃣ Resterende avtale ({mnd_fase_2} mnd)")
+        st.markdown(f"## **{total_mnd_fase_2:,.2f} kr/md**")
+        st.write(f"**Varighet:** {mnd_fase_2} måneder")
+        st.caption("*(Kun ny telefon etter at den gamle avtalen er utløpt)*")
+
+    st.markdown(f"### 📌 Oppsummert: **{mnd_fase_1} mnd {total_mnd_fase_1:,.0f} kr/md  ➔  {mnd_fase_2} mnd {total_mnd_fase_2:,.0f} kr/md**")
+
 else:
-    st.info(f"**Månedspris hele perioden (1 – {ny_nedbetaling_mnd} mnd):** **{ny_mnd_pris_ren:.2f} kr/md**")
+    st.success(f"### 1️⃣ Månedspris hele perioden ({ny_nedbetaling_mnd} mnd)")
+    st.markdown(f"## **{ny_mnd_pris_ren:,.2f} kr/md**")
+    st.write(f"**Varighet:** {ny_nedbetaling_mnd} måneder")
 
-# Lag datasett for graf
+st.markdown("---")
+
+# --- STOLPEDIAGRAM ---
 tidslinje_data = []
 for mnd in range(1, ny_nedbetaling_mnd + 1):
     er_fase_1 = mnd <= gjenstaende_mnd
@@ -144,13 +166,12 @@ for mnd in range(1, ny_nedbetaling_mnd + 1):
 
 df = pd.DataFrame(tidslinje_data)
 
-# Stolpediagram
 fig = px.bar(
     df, 
     x="Måned", 
     y="Beløp", 
     color="Del", 
-    title="Månedlig Belastning Over Tid (kr)",
+    title="Visuell oversikt over månedlig belastning (kr)",
     labels={"Beløp": "Kroner per måned", "Måned": "Måned i ny avtale"},
     color_discrete_map={"Ny Telefon": "#0083B0", "Gammel Avtale": "#FF6B6B"}
 )
