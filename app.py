@@ -8,13 +8,13 @@ import re
 st.set_page_config(page_title="Kalkulator for Nedbetaling & Innbytte", layout="wide")
 st.title("📱 Nedbetalingskalkulator")
 
-# --- INITIALISER DEFAULT-VERDIER I SESSION STATE ---
+# --- INITIALISER DEFAULT-VERDIER I SESSION STATE (SETT TIL 0 NÅR APPEN STARTER) ---
 if "gammel_mnd_pris" not in st.session_state:
-    st.session_state["gammel_mnd_pris"] = 228.75
+    st.session_state["gammel_mnd_pris"] = 0.0
 if "innbytteverdi" not in st.session_state:
-    st.session_state["innbytteverdi"] = 4368.0
+    st.session_state["innbytteverdi"] = 0.0
 if "gjenstaende_mnd" not in st.session_state:
-    st.session_state["gjenstaende_mnd"] = 11
+    st.session_state["gjenstaende_mnd"] = 0
 
 # --- FUNKSJON FOR TEKST-PARSING ---
 def parse_kopiert_tekst(tekst):
@@ -88,7 +88,7 @@ if st.sidebar.button("📋 Hent ut informasjonen"):
     else:
         st.sidebar.error("Vennligst lim inn teksten først.")
 
-# Felter koblet direkte til session_state
+# Felter koblet direkte til session_state (starter nå på 0)
 gammel_mnd_pris = st.sidebar.number_input(
     "Gammel månedspris (kr/md)", 
     min_value=0.0, 
@@ -168,10 +168,9 @@ fig = px.bar(
     color_discrete_map={"Ny Telefon": "#0083B0", "Gammel Avtale": "#FF6B6B"}
 )
 
-# Gjøre stolpene helt tette og rense opp utseendet
 fig.update_layout(
     barmode='stack', 
-    bargap=0.0,  # Fjerner mellomrom mellom månedene så stolpene slås helt sammen
+    bargap=0.0,
     xaxis_tickangle=-45,
     margin=dict(l=10, r=10, t=10, b=10),
     legend_title_text=""
