@@ -7,7 +7,7 @@ import re
 # Sideoppsett med mørkt tema
 st.set_page_config(page_title="Innbyttekalkulator", layout="centered")
 
-# --- CSS STYLING FOR Å NÅ NØYAKTIG MATCH MED DESIGNET ---
+# --- CSS STYLING FOR Å NÅ NØYAKTIG MATCH MED DESIGNET OG GOD LESBARHET ---
 st.markdown("""
 <style>
     /* Bakgrunnsfarger */
@@ -35,6 +35,31 @@ st.markdown("""
         gap: 10px;
     }
 
+    /* Gjøre felt-labler og radio-tekst helt lyse og synlige */
+    label, div[data-widget="radio"] label p, .stWidgetLabel p {
+        color: #e2e8f0 !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+    }
+
+    /* Styling for radioknappene (24 mnd / 36 mnd) */
+    div[data-testid="stMarkdownContainer"] p {
+        color: #ffffff !important;
+    }
+
+    /* Input-felter styling */
+    div[data-baseweb="input"] {
+        background-color: #111d38 !important;
+        border-color: #1e293b !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+    }
+
+    div[data-baseweb="input"] input {
+        color: #ffffff !important;
+        font-weight: bold !important;
+    }
+
     /* Resultat-boks design */
     .result-box {
         background-color: #0b1736;
@@ -57,7 +82,7 @@ st.markdown("""
         margin: 10px 0;
     }
 
-    /* Tekstfarger */
+    /* Tekstfarger for resultater */
     .text-light { color: #94a3b8; }
     .text-white-bold { color: #ffffff; font-weight: bold; font-size: 20px; }
     .text-green-bold { color: #10b981; font-weight: bold; font-size: 20px; }
@@ -202,7 +227,7 @@ total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
 
-# --- RESULTATKORT (KLIPPET UT I HENHOLD TIL DITT SKJERMBILDE) ---
+# --- RESULTATKORT ---
 st.markdown('<div class="result-box">', unsafe_allow_html=True)
 
 # Rad 1: Effektiv ny mobil-sum
