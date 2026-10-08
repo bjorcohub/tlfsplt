@@ -9,15 +9,15 @@ import re
 st.set_page_config(page_title="Kalkulator for Nedbetaling & Innbytte", layout="wide")
 st.title("📱 Kalkulator for Nedbetaling & Innbytte (Splitt/SWAP)")
 
-# --- INITIALISER DEFAULT-VERDIER ---
+# --- INITIALISER DEFAULT-VERDIER I SESSION STATE ---
 if "gammel_mnd_pris" not in st.session_state:
-    st.session_state.gammel_mnd_pris = 228.75
+    st.session_state["gammel_mnd_pris"] = 228.75
 if "innbytteverdi" not in st.session_state:
-    st.session_state.innbytteverdi = 4368.0
+    st.session_state["innbytteverdi"] = 4368.0
 if "gjenstaende_mnd" not in st.session_state:
-    st.session_state.gjenstaende_mnd = 11
+    st.session_state["gjenstaende_mnd"] = 11
 
-# --- FUNCTION FOR GRATIS OCR-UTLESING ---
+# --- FUNKSJON FOR GRATIS OCR-UTLESING ---
 def les_skjermbilde(bilde):
     img = Image.open(bilde)
     # Hent ut råtekst fra bildet
@@ -27,19 +27,19 @@ def les_skjermbilde(bilde):
     innbytte = None
     gjenstaende_belop = None
     
-    # 1. Månedspris (f.eks. "228,75 /md" eller "228.75/md")
+    # 1. Månedspris (f.eks. "228,75 /md." eller "228.75/md")
     mnd_match = re.search(r'(\d+[\.,]\d+)\s*/?\s*md', tekst, re.IGNORECASE)
     if mnd_match:
         mnd_pris = float(mnd_match.group(1).replace(',', '.'))
 
-    # 2. Innbytteverdi (f.eks. "opptil 4368" eller "4368,-")
+    # 2. Innbytteverdi (f.eks. "opptil 4368" eller "4368,- kr")
     innbytte_match = re.search(r'opptil\s*(\d+)', tekst, re.IGNORECASE)
     if not innbytte_match:
-        innbytte_match = re.search(r'(\d+)\s*,-\s*kr', tekst, re.IGNORECASE)
+        innbytte_match = re.search(r'(\d+)\s*[\.,-]?\s*kr', tekst, re.IGNORECASE)
     if innbytte_match:
-        innbytte = float(innbytte_match.group(1))
+        innbytte = float(innbytte_match.group(1).replace('.', ''))
 
-    # 3. Gjenstående beløp (f.eks. "Gjenstående beløp ... 2516,25")
+    # 3. Gjenstående beløp (f.eks. "Gjenstående beløp i Splitt-avtalen: 2516,25")
     gjen_match = re.search(r'Gjenstående[^\d]*(\d+[\.,]\d+|\d+)', tekst, re.IGNORECASE)
     if gjen_match:
         gjenstaende_belop = float(gjen_match.group(1).replace(',', '.'))
@@ -68,38 +68,40 @@ if uploaded_file:
         with st.spinner("Analyserer bilde..."):
             m_pris, i_verdi, m_igjen = les_skjermbilde(uploaded_file)
             funnet = False
+            
             if m_pris is not None:
-                st.session_state.gammel_mnd_pris = m_pris
+                st.session_state["gammel_mnd_pris"] = m_pris
                 funnet = True
             if i_verdi is not None:
-                st.session_state.innbytteverdi = i_verdi
+                st.session_state["innbytteverdi"] = i_verdi
                 funnet = True
             if m_igjen is not None:
-                st.session_state.gjenstaende_mnd = m_igjen
+                st.session_state["gjenstaende_mnd"] = m_igjen
                 funnet = True
             
             if funnet:
                 st.sidebar.success("Tallene ble hentet ut!")
+                st.rerun()  # Tvinger Streamlit til å laste inn feltene på nytt med de nye verdiene
             else:
-                st.sidebar.warning("Fant ikke alle tall automatisk. Vennligst sjekk manuelt.")
+                st.sidebar.warning("Fant ikke tallene automatisk. Sjekk bildet eller legg inn manuelt.")
 
-# Felter (støtter automatisk oppdatering fra session_state)
+# Felter koblet direkte til session_state via key
 gammel_mnd_pris = st.sidebar.number_input(
     "Gammel månedspris (kr/md)", 
     min_value=0.0, 
-    value=float(st.session_state.gammel_mnd_pris), 
+    key="gammel_mnd_pris",
     step=10.0
 )
 gjenstaende_mnd = st.sidebar.number_input(
     "Gjenstående måneder på gammel avtale", 
     min_value=0, 
-    value=int(st.session_state.gjenstaende_mnd), 
+    key="gjenstaende_mnd",
     step=1
 )
 innbytteverdi = st.sidebar.number_input(
     "Innbytteverdi på gammel telefon (kr)", 
     min_value=0.0, 
-    value=float(st.session_state.innbytteverdi), 
+    key="innbytteverdi",
     step=100.0
 )
 
