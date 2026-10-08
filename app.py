@@ -4,17 +4,89 @@ import plotly.express as px
 from datetime import datetime
 import re
 
-# Sideoppsett
-st.set_page_config(page_title="Kalkulator for Nedbetaling & Innbytte", layout="wide")
-st.title("📱 Nedbetalingskalkulator")
+# Sideoppsett med mørkt tema
+st.set_page_config(page_title="Innbyttekalkulator", layout="centered")
+
+# --- CSS STYLING FOR Å NÅ NØYAKTIG MATCH MED DESIGNET ---
+st.markdown("""
+<style>
+    /* Bakgrunnsfarger */
+    .stApp {
+        background-color: #0b1329;
+        color: #e2e8f0;
+    }
+    
+    /* Hovedkort container */
+    .main-card {
+        background-color: #0d1b3a;
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+    }
+
+    /* Tittel og overskrifter */
+    .main-title {
+        color: #f59e0b;
+        font-weight: 700;
+        font-size: 26px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Resultat-boks design */
+    .result-box {
+        background-color: #0b1736;
+        border: 1px solid #1d3557;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 15px;
+    }
+
+    .result-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        font-size: 16px;
+    }
+
+    .border-bottom-dash {
+        border-bottom: 1px dashed #2a3a5e;
+        margin: 10px 0;
+    }
+
+    /* Tekstfarger */
+    .text-light { color: #94a3b8; }
+    .text-white-bold { color: #ffffff; font-weight: bold; font-size: 20px; }
+    .text-green-bold { color: #10b981; font-weight: bold; font-size: 20px; }
+    .text-yellow-bold { color: #f59e0b; font-weight: bold; font-size: 20px; }
+
+    /* Custom CSS for knapper */
+    div.stButton > button {
+        width: 100%;
+        border-radius: 8px;
+        background-color: #1e293b;
+        color: white;
+        border: 1px solid #334155;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- INITIALISER DEFAULT-VERDIER I SESSION STATE ---
+if "ny_tlf_pris" not in st.session_state:
+    st.session_state["ny_tlf_pris"] = 15990
+if "innbytteverdi" not in st.session_state:
+    st.session_state["innbytteverdi"] = 4368
+if "innbyttebonus" not in st.session_state:
+    st.session_state["innbyttebonus"] = 0
 if "gammel_mnd_pris" not in st.session_state:
     st.session_state["gammel_mnd_pris"] = 0.0
-if "innbytteverdi" not in st.session_state:
-    st.session_state["innbytteverdi"] = 0.0
 if "gjenstaende_mnd" not in st.session_state:
     st.session_state["gjenstaende_mnd"] = 0
+if "nedbetalingsmnd" not in st.session_state:
+    st.session_state["nedbetalingsmnd"] = 24
 
 # --- FUNKSJON FOR TEKST-PARSING ---
 def parse_kopiert_tekst(tekst):
@@ -22,19 +94,16 @@ def parse_kopiert_tekst(tekst):
     innbytte = None
     mnd_igjen = None
 
-    # 1. Månedspris (f.eks. "228,75 /md.")
     mnd_match = re.search(r'(\d+[\.,]\d+)\s*/?\s*md', tekst, re.IGNORECASE)
     if mnd_match:
         mnd_pris = float(mnd_match.group(1).replace(',', '.'))
 
-    # 2. Innbytteverdi (f.eks. "opptil 4368,- kr")
     innbytte_match = re.search(r'opptil\s*(\d+)', tekst, re.IGNORECASE)
     if not innbytte_match:
         innbytte_match = re.search(r'(\d+)\s*[\.,-]?\s*kr', tekst, re.IGNORECASE)
     if innbytte_match:
         innbytte = float(innbytte_match.group(1))
 
-    # 3. Beregn gjenstående måneder ut fra datoperiode (f.eks. "05.09.2025 - 05.09.2027")
     dato_match = re.search(r'(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})', tekst)
     if dato_match:
         try:
@@ -45,7 +114,6 @@ def parse_kopiert_tekst(tekst):
         except Exception:
             pass
 
-    # Backup: Regn ut fra Gjenstående beløp / Månedspris
     if mnd_igjen is None and mnd_pris and mnd_pris > 0:
         gjen_match = re.search(r'Gjenstående[^\d]*(\d+[\.,]\d+|\d+)', tekst, re.IGNORECASE)
         if gjen_match:
@@ -54,145 +122,154 @@ def parse_kopiert_tekst(tekst):
 
     return mnd_pris, innbytte, mnd_igjen
 
-# --- SIDEMENY: Inndata ---
-st.sidebar.header("1. Ny Telefon")
-ny_tlf_pris = st.sidebar.number_input("Totalpris på ny telefon (kr)", min_value=0, value=15000, step=500)
-ny_nedbetaling_mnd = st.sidebar.selectbox("Nedbetalingstid ny telefon (mnd)", [24, 36], index=0)
 
-st.sidebar.markdown("---")
-st.sidebar.header("2. Eksisterende Avtale & Innbytte")
+# --- HOVED-GRENSESNITT ---
 
-# Tekstområde for å lim inn fra kundebilde
-lim_inn_tekst = st.sidebar.text_area("Lim inn tekst fra kundebildet:", height=130)
+# TOPPBAR MED TITTEL OG PERIODEVELGER
+col_title, col_mnd_select = st.columns([2, 1])
 
-if st.sidebar.button("📋 Hent ut informasjonen"):
-    if lim_inn_tekst.strip():
-        m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
-        funnet = False
-        
-        if m_pris is not None:
-            st.session_state["gammel_mnd_pris"] = m_pris
-            funnet = True
-        if i_verdi is not None:
-            st.session_state["innbytteverdi"] = i_verdi
-            funnet = True
-        if m_igjen is not None:
-            st.session_state["gjenstaende_mnd"] = m_igjen
-            funnet = True
-        
-        if funnet:
-            st.sidebar.success("Oppdatert!")
+with col_title:
+    st.markdown('<div class="main-title">🔵 Innbyttekalkulator</div>', unsafe_allow_html=True)
+
+with col_mnd_select:
+    mnd_valg = st.radio(
+        "",
+        options=[24, 36],
+        index=0 if st.session_state["nedbetalingsmnd"] == 24 else 1,
+        format_func=lambda x: f"{x} mnd",
+        horizontal=True,
+        key="nedbetalingsmnd"
+    )
+
+st.markdown("---")
+
+# INNDATAFELTER
+col_pris = st.columns(1)[0]
+with col_pris:
+    ny_tlf_pris = st.number_input(
+        "1. NY MOBIL PRIS (KONTANT)", 
+        min_value=0, 
+        key="ny_tlf_pris", 
+        step=500
+    )
+
+col_in1, col_in2 = st.columns(2)
+with col_in1:
+    innbytteverdi = st.number_input(
+        "2. INNBYTTEVERDI GAMMEL MOBIL", 
+        min_value=0, 
+        key="innbytteverdi", 
+        step=100
+    )
+
+with col_in2:
+    innbyttebonus = st.number_input(
+        "3. INNBYTTEBONUS", 
+        min_value=0, 
+        key="innbyttebonus", 
+        step=100
+    )
+
+# EKSPANDERBAR FOR GAMMEL SPLITT / TEKSTLIMING
+with st.expander("▶ Har kunden gjenstående gammel Splitt?"):
+    lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=100)
+    if st.button("📋 Hent ut fra tekst"):
+        if lim_inn_tekst.strip():
+            m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
+            if m_pris is not None:
+                st.session_state["gammel_mnd_pris"] = m_pris
+            if i_verdi is not None:
+                st.session_state["innbytteverdi"] = i_verdi
+            if m_igjen is not None:
+                st.session_state["gjenstaende_mnd"] = m_igjen
             st.rerun()
-        else:
-            st.sidebar.warning("Fant ikke alle tall i teksten.")
-    else:
-        st.sidebar.error("Vennligst lim inn teksten først.")
-
-# Felter koblet direkte til session_state
-gammel_mnd_pris = st.sidebar.number_input(
-    "Gammel månedspris (kr/md)", 
-    min_value=0.0, 
-    key="gammel_mnd_pris",
-    step=10.0
-)
-gjenstaende_mnd = st.sidebar.number_input(
-    "Gjenstående måneder på gammel avtale", 
-    min_value=0, 
-    key="gjenstaende_mnd",
-    step=1
-)
-innbytteverdi = st.sidebar.number_input(
-    "Innbytteverdi på gammel telefon (kr)", 
-    min_value=0.0, 
-    key="innbytteverdi",
-    step=100.0
-)
+            
+    c_g1, c_g2 = st.columns(2)
+    with c_g1:
+        gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
+    with c_g2:
+        gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
 
 # --- BEREGNINGER ---
-effektiv_ny_totalpris = max(0.0, ny_tlf_pris - innbytteverdi)
-ny_mnd_pris_ren = effektiv_ny_totalpris / ny_nedbetaling_mnd if ny_nedbetaling_mnd > 0 else 0
+total_rabatt = innbytteverdi + innbyttebonus
+effektiv_ny_totalpris = max(0.0, ny_tlf_pris - total_rabatt)
+ny_mnd_pris_ren = effektiv_ny_totalpris / mnd_valg if mnd_valg > 0 else 0
 
-mnd_fase_1 = min(gjenstaende_mnd, ny_nedbetaling_mnd)
-mnd_fase_2 = max(0, ny_nedbetaling_mnd - mnd_fase_1)
+mnd_fase_1 = min(st.session_state["gjenstaende_mnd"], mnd_valg)
+mnd_fase_2 = max(0, mnd_valg - mnd_fase_1)
 
-total_mnd_fase_1 = ny_mnd_pris_ren + gammel_mnd_pris
+total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
-# --- NØKKELTALL (KOMPAKT) ---
-col1, col2, col3 = st.columns(3)
-col1.metric("Månedspris ny tlf", f"{ny_mnd_pris_ren:.2f} kr/md")
-col2.metric("Innbytteverdi", f"{innbytteverdi:,.0f} kr")
-col3.metric("Effektiv ny totalpris", f"{effektiv_ny_totalpris:,.0f} kr")
 
-st.markdown("---")
+# --- RESULTATKORT (KLIPPET UT I HENHOLD TIL DITT SKJERMBILDE) ---
+st.markdown('<div class="result-box">', unsafe_allow_html=True)
 
-# --- HORISONTAL DELE-VISNING (KORT) ---
-st.subheader("💳 Månedlig nedbetalingsplan")
+# Rad 1: Effektiv ny mobil-sum
+st.markdown(f'''
+<div class="result-row">
+    <span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
+    <span class="text-white-bold">{effektiv_ny_totalpris:,.0f} kr</span>
+</div>
+''', unsafe_allow_html=True)
 
-if gammel_mnd_pris > 0 and gjenstaende_mnd > 0 and mnd_fase_2 > 0:
-    col_p1, col_p2 = st.columns(2)
-    
-    with col_p1:
-        st.error(f"### Del 1 ({mnd_fase_1} mnd)")
-        st.markdown(f"# **{total_mnd_fase_1:,.2f} kr/md**")
-        st.caption(f"*(Ny tlf: {ny_mnd_pris_ren:.2f} kr + Gammel avtale: {gammel_mnd_pris:.2f} kr)*")
+# Rad 2: Ny mobil per mnd
+st.markdown(f'''
+<div class="result-row">
+    <span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
+    <span class="text-green-bold">{ny_mnd_pris_ren:,.0f} kr/mnd</span>
+</div>
+''', unsafe_allow_html=True)
 
-    with col_p2:
-        st.success(f"### Del 2 ({mnd_fase_2} mnd)")
-        st.markdown(f"# **{total_mnd_fase_2:,.2f} kr/md**")
-        st.caption("*(Kun ny tlf etter gammel avtale er utløpt)*")
+st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
 
+if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
+    # Rad 3: Totalpris første periode
+    st.markdown(f'''
+    <div class="result-row">
+        <span class="text-light">Totalpris i første periode (inkl gammel Splitt avtale):</span>
+        <span class="text-yellow-bold">{total_mnd_fase_1:,.0f} kr/mnd (første {mnd_fase_1} mnd)</span>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # Rad 4: Pris i resterende periode
+    st.markdown(f'''
+    <div class="result-row">
+        <span class="text-light">Pris i resterende periode:</span>
+        <span class="text-green-bold">{total_mnd_fase_2:,.0f} kr/mnd (deretter i {mnd_fase_2} mnd)</span>
+    </div>
+    ''', unsafe_allow_html=True)
+
+st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
+
+# VISUELL TIDSLINJE NEDERST
+st.markdown('<span class="text-light" style="font-size: 12px; font-weight: bold; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span>', unsafe_allow_html=True)
+
+if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
+    tidslinje_faser = [
+        {"Fase": "F1", "Måneder": mnd_fase_1, "Farge": "Fase1", "Tekst": f"{total_mnd_fase_1:,.0f} kr/mnd<br><span style='font-size:11px;'>Første {mnd_fase_1} mnd</span>"},
+        {"Fase": "F2", "Måneder": mnd_fase_2, "Farge": "Fase2", "Tekst": f"{total_mnd_fase_2:,.0f} kr/mnd<br><span style='font-size:11px;'>Deretter {mnd_fase_2} mnd</span>"}
+    ]
 else:
-    st.success(f"### Hele perioden ({ny_nedbetaling_mnd} mnd)")
-    st.markdown(f"# **{ny_mnd_pris_ren:,.2f} kr/md**")
-
-st.markdown("---")
-
-# --- ELEGANTE HORISONTAL TIDSLINJE-BLOKKER ---
-st.subheader("📅 Tidslinje over nedbetalingen")
-
-tidslinje_faser = []
-
-if gammel_mnd_pris > 0 and gjenstaende_mnd > 0 and mnd_fase_2 > 0:
-    # Del 1
-    tidslinje_faser.append({
-        "Fase": f"Del 1: {total_mnd_fase_1:,.0f} kr/mnd ({mnd_fase_1} mnd)",
-        "Måneder": mnd_fase_1,
-        "Farge": "Del 1",
-        "Tekst": f"{total_mnd_fase_1:,.0f} kr/mnd første {mnd_fase_1} mnd"
-    })
-    # Del 2
-    tidslinje_faser.append({
-        "Fase": f"Del 2: {total_mnd_fase_2:,.0f} kr/mnd ({mnd_fase_2} mnd)",
-        "Måneder": mnd_fase_2,
-        "Farge": "Del 2",
-        "Tekst": f"{total_mnd_fase_2:,.0f} kr/mnd deretter {mnd_fase_2} mnd"
-    })
-else:
-    # Hele perioden som én fase
-    tidslinje_faser.append({
-        "Fase": f"Hele perioden: {ny_mnd_pris_ren:,.0f} kr/mnd ({ny_nedbetaling_mnd} mnd)",
-        "Måneder": ny_nedbetaling_mnd,
-        "Farge": "Del 2",
-        "Tekst": f"{ny_mnd_pris_ren:,.0f} kr/mnd i {ny_nedbetaling_mnd} mnd"
-    })
+    tidslinje_faser = [
+        {"Fase": "F2", "Måneder": mnd_valg, "Farge": "Fase2", "Tekst": f"{ny_mnd_pris_ren:,.0f} kr/mnd<br><span style='font-size:11px;'>Hele perioden ({mnd_valg} mnd)</span>"}
+    ]
 
 df_tidslinje = pd.DataFrame(tidslinje_faser)
 
-# Bygg horisontal blokk-graf
 fig = px.bar(
     df_tidslinje,
     x="Måneder",
-    y=["Tidslinje"] * len(df_tidslinje),
+    y=[""] * len(df_tidslinje),
     color="Farge",
     orientation='h',
     text="Tekst",
-    color_discrete_map={"Del 1": "#FF6B6B", "Del 2": "#0083B0"}
+    color_discrete_map={"Fase1": "#f59e0b", "Fase2": "#10b981"}
 )
 
 fig.update_traces(
     textposition='inside',
-    textfont=dict(size=16, color='white', family="Arial Black"),
+    textfont=dict(size=14, color='black', family="Arial Black"),
     insidetextanchor='middle'
 )
 
@@ -201,8 +278,12 @@ fig.update_layout(
     showlegend=False,
     xaxis=dict(showgrid=False, showticklabels=False, title=""),
     yaxis=dict(showgrid=False, showticklabels=False, title=""),
-    height=120,
-    margin=dict(l=0, r=0, t=10, b=10)
+    height=80,
+    margin=dict(l=0, r=0, t=5, b=5),
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)'
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
