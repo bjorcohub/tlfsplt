@@ -87,14 +87,24 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    /* Resultat-kort */
+    /* Resultat-kort Standard */
     .result-box {
         background: linear-gradient(180deg, #0f172a 0%, #0b1329 100%);
         border: 1.5px solid #1d3557;
         border-radius: 16px;
         padding: 24px;
-        margin-top: 20px;
+        margin-top: 15px;
         box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Resultat-kort i Kundemodus (Større og ekstra luft) */
+    .result-box-presentation {
+        background: linear-gradient(180deg, #0f172a 0%, #080f24 100%);
+        border: 2px solid #38bdf8;
+        border-radius: 20px;
+        padding: 32px;
+        margin-top: 10px;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.15), 0 20px 25px -5px rgba(0, 0, 0, 0.5);
     }
 
     .result-row {
@@ -103,6 +113,14 @@ st.markdown("""
         align-items: center;
         padding: 8px 0;
         font-size: 15px;
+    }
+
+    .result-row-large {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        font-size: 18px;
     }
 
     .border-bottom-dash {
@@ -116,11 +134,15 @@ st.markdown("""
     .text-green-bold { color: #10b981; font-weight: 800; font-size: 20px; }
     .text-yellow-bold { color: #fbbf24; font-weight: 800; font-size: 20px; }
 
+    .text-white-bold-lg { color: #ffffff; font-weight: 800; font-size: 26px; }
+    .text-green-bold-lg { color: #10b981; font-weight: 800; font-size: 26px; }
+    .text-yellow-bold-lg { color: #fbbf24; font-weight: 800; font-size: 26px; }
+
     /* Custom HTML Tidslinje Styling */
     .timeline-container {
         display: flex;
         width: 100%;
-        height: 54px;
+        height: 56px;
         border-radius: 10px;
         overflow: hidden;
         margin-top: 10px;
@@ -135,7 +157,7 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         font-weight: 800;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.15;
         white-space: nowrap;
         padding: 0 4px;
@@ -151,7 +173,7 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         font-weight: 800;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.15;
         white-space: nowrap;
         padding: 0 4px;
@@ -198,6 +220,8 @@ if "gjenstaende_mnd" not in st.session_state:
     st.session_state["gjenstaende_mnd"] = 0
 if "nedbetalingsmnd" not in st.session_state:
     st.session_state["nedbetalingsmnd"] = 24
+if "kundemodus" not in st.session_state:
+    st.session_state["kundemodus"] = False
 
 # --- CALLBACK-FUNKSJONER FOR NULLSTILLING ---
 def reset_felt(nokkel, verdi=0):
@@ -240,11 +264,14 @@ def parse_kopiert_tekst(tekst):
 
 # --- HOVED-GRENSESNITT ---
 
-# TOPPBAR (TITTEL + KNAPPER)
-col_title, col_mnd_select = st.columns([2, 1])
+# TOPPBAR (TITTEL + PRESENTASJONSSWITCH + MÅNEDSSWITCH)
+col_title, col_toggle, col_mnd_select = st.columns([2, 1, 1])
 
 with col_title:
     st.markdown('<div class="main-title">🔵 Innbyttekalkulator</div>', unsafe_allow_html=True)
+
+with col_toggle:
+    kundemodus = st.toggle("📺 Kundemodus", key="kundemodus")
 
 with col_mnd_select:
     mnd_valg = st.radio(
@@ -256,76 +283,75 @@ with col_mnd_select:
         key="nedbetalingsmnd"
     )
 
-st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
-# EXPANDER FOR TEKST-LIMING
-with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
-    lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=90)
-    
-    if st.button("📋 Hent ut informasjonen fra teksten"):
-        if lim_inn_tekst.strip():
-            m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
-            if m_pris is not None:
-                st.session_state["gammel_mnd_pris"] = float(m_pris)
-            if i_verdi is not None:
-                st.session_state["innbytteverdi"] = int(i_verdi)
-            if m_igjen is not None:
-                st.session_state["gjenstaende_mnd"] = int(m_igjen)
-            st.rerun()
+# INNDATAFELTER (KUN SYNLIG NÅR KUNDEMODUS ER AV)
+if not kundemodus:
+    with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
+        lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=90)
+        
+        if st.button("📋 Hent ut informasjonen fra teksten"):
+            if lim_inn_tekst.strip():
+                m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
+                if m_pris is not None:
+                    st.session_state["gammel_mnd_pris"] = float(m_pris)
+                if i_verdi is not None:
+                    st.session_state["innbytteverdi"] = int(i_verdi)
+                if m_igjen is not None:
+                    st.session_state["gjenstaende_mnd"] = int(m_igjen)
+                st.rerun()
 
-# INNDATAFELTER MED LINJERING OGSÅ PÅ TOPP-FELTET
+    # 1. NY MOBIL PRIS
+    col_p1, col_p2 = st.columns([11, 1])
+    with col_p1:
+        ny_tlf_pris = st.number_input(
+            "1. NY MOBIL PRIS (KONTANT)", 
+            min_value=0, 
+            key="ny_tlf_pris", 
+            step=500
+        )
+    with col_p2:
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        st.button("🗑️", key="reset_ny_tlf", on_click=reset_felt, args=("ny_tlf_pris", 0))
 
-# 1. NY MOBIL PRIS (KORRIGERT FORHOLD SLIK AT DET FLUKTER HERT MED DE TODELEDE FELTENE UNDER)
-col_p1, col_p2 = st.columns([11, 1])
-with col_p1:
-    ny_tlf_pris = st.number_input(
-        "1. NY MOBIL PRIS (KONTANT)", 
-        min_value=0, 
-        key="ny_tlf_pris", 
-        step=500
-    )
-with col_p2:
-    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_ny_tlf", on_click=reset_felt, args=("ny_tlf_pris", 0))
+    # 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS
+    col_in1, col_btn1, col_in2, col_btn2 = st.columns([5, 1, 5, 1])
 
-# 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS
-col_in1, col_btn1, col_in2, col_btn2 = st.columns([5, 1, 5, 1])
+    with col_in1:
+        innbytteverdi = st.number_input(
+            "2. INNBYTTEVERDI", 
+            min_value=0, 
+            key="innbytteverdi", 
+            step=100
+        )
+    with col_btn1:
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        st.button("🗑️", key="reset_innbytte", on_click=reset_felt, args=("innbytteverdi", 0))
 
-with col_in1:
-    innbytteverdi = st.number_input(
-        "2. INNBYTTEVERDI", 
-        min_value=0, 
-        key="innbytteverdi", 
-        step=100
-    )
-with col_btn1:
-    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_innbytte", on_click=reset_felt, args=("innbytteverdi", 0))
+    with col_in2:
+        innbyttebonus = st.number_input(
+            "3. INNBYTTEBONUS", 
+            min_value=0, 
+            key="innbyttebonus", 
+            step=100
+        )
+    with col_btn2:
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        st.button("🗑️", key="reset_bonus", on_click=reset_felt, args=("innbyttebonus", 0))
 
-with col_in2:
-    innbyttebonus = st.number_input(
-        "3. INNBYTTEBONUS", 
-        min_value=0, 
-        key="innbyttebonus", 
-        step=100
-    )
-with col_btn2:
-    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_bonus", on_click=reset_felt, args=("innbyttebonus", 0))
+    # GAMMEL SPLITT
+    c_g1, c_gbtn1, c_g2, c_gbtn2 = st.columns([5, 1, 5, 1])
+    with c_g1:
+        gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
+    with c_gbtn1:
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        st.button("🗑️", key="reset_gammel_pris", on_click=reset_felt, args=("gammel_mnd_pris", 0.0))
 
-# GAMMEL SPLITT
-c_g1, c_gbtn1, c_g2, c_gbtn2 = st.columns([5, 1, 5, 1])
-with c_g1:
-    gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
-with c_gbtn1:
-    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_gammel_pris", on_click=reset_felt, args=("gammel_mnd_pris", 0.0))
-
-with c_g2:
-    gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
-with c_gbtn2:
-    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_gjenstaende", on_click=reset_felt, args=("gjenstaende_mnd", 0))
+    with c_g2:
+        gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
+    with c_gbtn2:
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        st.button("🗑️", key="reset_gjenstaende", on_click=reset_felt, args=("gjenstaende_mnd", 0))
 
 
 # --- BEREGNINGER ---
@@ -340,19 +366,25 @@ total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
 
-# --- RESULTATKORT UTEN INNRYKK PÅ HTML ---
+# --- RESULTATKORT OG TIDSLINJE ---
 
 har_fase1 = st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0
 
+row_class = "result-row-large" if kundemodus else "result-row"
+white_bold_class = "text-white-bold-lg" if kundemodus else "text-white-bold"
+green_bold_class = "text-green-bold-lg" if kundemodus else "text-green-bold"
+yellow_bold_class = "text-yellow-bold-lg" if kundemodus else "text-yellow-bold"
+box_class = "result-box-presentation" if kundemodus else "result-box"
+
 fase1_rad = ""
 if har_fase1:
-    fase1_rad = f"""<div class="result-row">
+    fase1_rad = f"""<div class="{row_class}">
 <span class="text-light">Totalpris i første periode (inkl gammel Splitt):</span>
-<span class="text-yellow-bold">{total_mnd_fase_1:,.0f} kr/mnd (første {mnd_fase_1} mnd)</span>
+<span class="{yellow_bold_class}">{total_mnd_fase_1:,.0f} kr/mnd (første {mnd_fase_1} mnd)</span>
 </div>
-<div class="result-row">
+<div class="{row_class}">
 <span class="text-light">Pris i resterende periode:</span>
-<span class="text-green-bold">{total_mnd_fase_2:,.0f} kr/mnd (deretter i {mnd_fase_2} mnd)</span>
+<span class="{green_bold_class}">{total_mnd_fase_2:,.0f} kr/mnd (deretter i {mnd_fase_2} mnd)</span>
 </div>
 <div class="border-bottom-dash"></div>"""
 
@@ -360,11 +392,9 @@ if har_fase1:
     p1 = (mnd_fase_1 / mnd_valg) * 100
     p2 = (mnd_fase_2 / mnd_valg) * 100
     
-    # Sørg for at smale/korte perioder (f.eks. 1 mnd) har nok plass til teksten eller en ultrakompakt visning
     tekst_fase1 = f"<span>{total_mnd_fase_1:,.0f} kr/mnd</span><span class=\"timeline-subtext\">Første {mnd_fase_1} mnd</span>" if p1 >= 18 else f"<span>{total_mnd_fase_1:,.0f}kr</span><span class=\"timeline-subtext\">{mnd_fase_1}m</span>"
     tekst_fase2 = f"<span>{total_mnd_fase_2:,.0f} kr/mnd</span><span class=\"timeline-subtext\">Deretter {mnd_fase_2} mnd</span>" if p2 >= 18 else f"<span>{total_mnd_fase_2:,.0f}kr</span><span class=\"timeline-subtext\">{mnd_fase_2}m</span>"
     
-    # Sätt min-width på minst 8% så teksten ikke skvises om det er f.eks. 1 mnd
     p1_vis = max(8.0, p1) if p2 > 8 else min(92.0, p1)
     p2_vis = 100.0 - p1_vis
 
@@ -384,14 +414,14 @@ else:
 </div>
 </div>"""
 
-full_html = f"""<div class="result-box">
-<div class="result-row">
+full_html = f"""<div class="{box_class}">
+<div class="{row_class}">
 <span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
-<span class="text-white-bold">{effektiv_ny_totalpris:,.0f} kr</span>
+<span class="{white_bold_class}">{effektiv_ny_totalpris:,.0f} kr</span>
 </div>
-<div class="result-row">
+<div class="{row_class}">
 <span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
-<span class="text-green-bold">{ny_mnd_pris_ren:,.0f} kr/mnd</span>
+<span class="{green_bold_class}">{ny_mnd_pris_ren:,.0f} kr/mnd</span>
 </div>
 <div class="border-bottom-dash"></div>
 {fase1_rad}
