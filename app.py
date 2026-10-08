@@ -303,66 +303,58 @@ total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
 
-# --- RESULTATKORT BYGGET TRYGT ---
+# --- RESULTATKORT UTEN INNRYKK PÅ HTML SÅ DET IKKE VISES SOM KODEBLOKK ---
 
 har_fase1 = st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0
 
 fase1_rad = ""
 if har_fase1:
-    fase1_rad = f"""
-    <div class="result-row">
-        <span class="text-light">Totalpris i første periode (inkl gammel Splitt):</span>
-        <span class="text-yellow-bold">{total_mnd_fase_1:,.0f} kr/mnd (første {mnd_fase_1} mnd)</span>
-    </div>
-    <div class="result-row">
-        <span class="text-light">Pris i resterende periode:</span>
-        <span class="text-green-bold">{total_mnd_fase_2:,.0f} kr/mnd (deretter i {mnd_fase_2} mnd)</span>
-    </div>
-    <div class="border-bottom-dash"></div>
-    """
+    fase1_rad = f"""<div class="result-row">
+<span class="text-light">Totalpris i første periode (inkl gammel Splitt):</span>
+<span class="text-yellow-bold">{total_mnd_fase_1:,.0f} kr/mnd (første {mnd_fase_1} mnd)</span>
+</div>
+<div class="result-row">
+<span class="text-light">Pris i resterende periode:</span>
+<span class="text-green-bold">{total_mnd_fase_2:,.0f} kr/mnd (deretter i {mnd_fase_2} mnd)</span>
+</div>
+<div class="border-bottom-dash"></div>"""
 
 if har_fase1:
     p1 = (mnd_fase_1 / mnd_valg) * 100
     p2 = (mnd_fase_2 / mnd_valg) * 100
-    tidslinje_innhold = f"""
-    <div class="timeline-container">
-        <div class="timeline-bar-fase1" style="width: {p1}%;">
-            <span>{total_mnd_fase_1:,.0f} kr/mnd</span>
-            <span class="timeline-subtext">Første {mnd_fase_1} mnd</span>
-        </div>
-        <div class="timeline-bar-fase2" style="width: {p2}%;">
-            <span>{total_mnd_fase_2:,.0f} kr/mnd</span>
-            <span class="timeline-subtext">Deretter {mnd_fase_2} mnd</span>
-        </div>
-    </div>
-    """
-else:
-    tidslinje_innhold = f"""
-    <div class="timeline-container">
-        <div class="timeline-bar-fase2" style="width: 100%;">
-            <span>{ny_mnd_pris_ren:,.0f} kr/mnd</span>
-            <span class="timeline-subtext">Hele perioden ({mnd_valg} mnd)</span>
-        </div>
-    </div>
-    """
-
-full_html = f"""
-<div class="result-box">
-    <div class="result-row">
-        <span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
-        <span class="text-white-bold">{effektiv_ny_totalpris:,.0f} kr</span>
-    </div>
-    <div class="result-row">
-        <span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
-        <span class="text-green-bold">{ny_mnd_pris_ren:,.0f} kr/mnd</span>
-    </div>
-    <div class="border-bottom-dash"></div>
-    {fase1_rad}
-    <div style="margin-top: 6px; margin-bottom: 4px;">
-        <span class="text-light" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span>
-    </div>
-    {tidslinje_innhold}
+    tidslinje_innhold = f"""<div class="timeline-container">
+<div class="timeline-bar-fase1" style="width: {p1}%;">
+<span>{total_mnd_fase_1:,.0f} kr/mnd</span>
+<span class="timeline-subtext">Første {mnd_fase_1} mnd</span>
 </div>
-"""
+<div class="timeline-bar-fase2" style="width: {p2}%;">
+<span>{total_mnd_fase_2:,.0f} kr/mnd</span>
+<span class="timeline-subtext">Deretter {mnd_fase_2} mnd</span>
+</div>
+</div>"""
+else:
+    tidslinje_innhold = f"""<div class="timeline-container">
+<div class="timeline-bar-fase2" style="width: 100%;">
+<span>{ny_mnd_pris_ren:,.0f} kr/mnd</span>
+<span class="timeline-subtext">Hele perioden ({mnd_valg} mnd)</span>
+</div>
+</div>"""
+
+full_html = f"""<div class="result-box">
+<div class="result-row">
+<span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
+<span class="text-white-bold">{effektiv_ny_totalpris:,.0f} kr</span>
+</div>
+<div class="result-row">
+<span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
+<span class="text-green-bold">{ny_mnd_pris_ren:,.0f} kr/mnd</span>
+</div>
+<div class="border-bottom-dash"></div>
+{fase1_rad}
+<div style="margin-top: 6px; margin-bottom: 4px;">
+<span class="text-light" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span>
+</div>
+{tidslinje_innhold}
+</div>"""
 
 st.markdown(full_html, unsafe_allow_html=True)
