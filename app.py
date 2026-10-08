@@ -1,6 +1,4 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
 from datetime import datetime
 import re
 
@@ -41,7 +39,7 @@ st.markdown("""
         margin-bottom: 6px !important;
     }
 
-    /* Input-felter styling med mørk glasstekstur */
+    /* Input-felter styling */
     div[data-baseweb="input"] {
         background-color: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -80,7 +78,7 @@ st.markdown("""
         font-size: 14px !important;
     }
 
-    /* Expander styling (Gammel Splitt) */
+    /* Expander styling */
     .stExpander {
         background-color: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -89,7 +87,7 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    /* Resultat-kort (Match med referansebilde) */
+    /* Resultat-kort */
     .result-box {
         background: linear-gradient(180deg, #0f172a 0%, #0b1329 100%);
         border: 1.5px solid #1d3557;
@@ -117,6 +115,46 @@ st.markdown("""
     .text-white-bold { color: #ffffff; font-weight: 800; font-size: 20px; }
     .text-green-bold { color: #10b981; font-weight: 800; font-size: 20px; }
     .text-yellow-bold { color: #fbbf24; font-weight: 800; font-size: 20px; }
+
+    /* Custom HTML Tidslinje Styling */
+    .timeline-container {
+        display: flex;
+        width: 100%;
+        height: 52px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .timeline-bar-fase1 {
+        background-color: #fbbf24;
+        color: #0f172a;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-weight: 800;
+        font-size: 14px;
+        line-height: 1.2;
+    }
+
+    .timeline-bar-fase2 {
+        background-color: #10b981;
+        color: #0f172a;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-weight: 800;
+        font-size: 14px;
+        line-height: 1.2;
+    }
+
+    .timeline-subtext {
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.85;
+    }
 
     /* Knappestyling */
     div.stButton > button {
@@ -265,89 +303,67 @@ total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
 
-# --- SAMLET RESULTATKORT OG TIDSLINJE I ÉN RAMME ---
-st.markdown('<div class="result-box">', unsafe_allow_html=True)
+# --- BYGG HELE RESULTATKORTET I REN HTML SÅ INGEN STRUKTUR BRYTES ---
 
-# Rad 1: Effektiv sum
-st.markdown(f'''
-<div class="result-row">
-    <span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
-    <span class="text-white-bold">{effektiv_ny_totalpris:,.0f} kr</span>
-</div>
-''', unsafe_allow_html=True)
+har_fase1 = st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0
 
-# Rad 2: Ny mobil per mnd
-st.markdown(f'''
-<div class="result-row">
-    <span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
-    <span class="text-green-bold">{ny_mnd_pris_ren:,.0f} kr/mnd</span>
-</div>
-''', unsafe_allow_html=True)
-
-st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
-
-if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
-    # Rad 3: Første periode
-    st.markdown(f'''
+fase1_rad_html = ""
+if har_fase1:
+    fase1_rad_html = f'''
     <div class="result-row">
         <span class="text-light">Totalpris i første periode (inkl gammel Splitt):</span>
         <span class="text-yellow-bold">{total_mnd_fase_1:,.0f} kr/mnd (første {mnd_fase_1} mnd)</span>
     </div>
-    ''', unsafe_allow_html=True)
-
-    # Rad 4: Resterende periode
-    st.markdown(f'''
     <div class="result-row">
         <span class="text-light">Pris i resterende periode:</span>
         <span class="text-green-bold">{total_mnd_fase_2:,.0f} kr/mnd (deretter i {mnd_fase_2} mnd)</span>
     </div>
-    ''', unsafe_allow_html=True)
+    <div class="border-bottom-dash"></div>
+    '''
 
-    st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
-
-# VISUELL TIDSLINJE
-st.markdown('<div style="margin-top: 10px; margin-bottom: 8px;"><span class="text-light" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span></div>', unsafe_allow_html=True)
-
-if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
-    tidslinje_faser = [
-        {"Fase": "F1", "Måneder": mnd_fase_1, "Farge": "Fase1", "Tekst": f"<b>{total_mnd_fase_1:,.0f} kr/mnd</b><br><span style='font-size:11px; font-weight: normal;'>Første {mnd_fase_1} mnd</span>"},
-        {"Fase": "F2", "Måneder": mnd_fase_2, "Farge": "Fase2", "Tekst": f"<b>{total_mnd_fase_2:,.0f} kr/mnd</b><br><span style='font-size:11px; font-weight: normal;'>Deretter {mnd_fase_2} mnd</span>"}
-    ]
+# Generer ren HTML-tidslinje
+if har_fase1:
+    prosent_1 = (mnd_fase_1 / mnd_valg) * 100
+    prosent_2 = (mnd_fase_2 / mnd_valg) * 100
+    
+    tidslinje_html = f'''
+    <div class="timeline-container">
+        <div class="timeline-bar-fase1" style="width: {prosent_1}%;">
+            <span>{total_mnd_fase_1:,.0f} kr/mnd</span>
+            <span class="timeline-subtext">Første {mnd_fase_1} mnd</span>
+        </div>
+        <div class="timeline-bar-fase2" style="width: {prosent_2}%;">
+            <span>{total_mnd_fase_2:,.0f} kr/mnd</span>
+            <span class="timeline-subtext">Deretter {mnd_fase_2} mnd</span>
+        </div>
+    </div>
+    '''
 else:
-    tidslinje_faser = [
-        {"Fase": "F2", "Måneder": mnd_valg, "Farge": "Fase2", "Tekst": f"<b>{ny_mnd_pris_ren:,.0f} kr/mnd</b><br><span style='font-size:11px; font-weight: normal;'>Hele perioden ({mnd_valg} mnd)</span>"}
-    ]
+    tidslinje_html = f'''
+    <div class="timeline-container">
+        <div class="timeline-bar-fase2" style="width: 100%;">
+            <span>{ny_mnd_pris_ren:,.0f} kr/mnd</span>
+            <span class="timeline-subtext">Hele perioden ({mnd_valg} mnd)</span>
+        </div>
+    </div>
+    '''
 
-df_tidslinje = pd.DataFrame(tidslinje_faser)
-
-fig = px.bar(
-    df_tidslinje,
-    x="Måneder",
-    y=[""] * len(df_tidslinje),
-    color="Farge",
-    orientation='h',
-    text="Tekst",
-    color_discrete_map={"Fase1": "#fbbf24", "Fase2": "#10b981"}
-)
-
-fig.update_traces(
-    textposition='inside',
-    textfont=dict(size=14, color='#0f172a', family="Inter, sans-serif"),
-    insidetextanchor='middle'
-)
-
-fig.update_layout(
-    barmode='stack',
-    showlegend=False,
-    xaxis=dict(showgrid=False, showticklabels=False, title=""),
-    yaxis=dict(showgrid=False, showticklabels=False, title=""),
-    height=75,
-    margin=dict(l=0, r=0, t=5, b=5),
-    paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)'
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-# LUKK RESULTATBOKSEN
-st.markdown('</div>', unsafe_allow_html=True)
+# Tegn opp hele kortet samlet
+st.markdown(f'''
+<div class="result-box">
+    <div class="result-row">
+        <span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
+        <span class="text-white-bold">{effektiv_ny_totalpris:,.0f} kr</span>
+    </div>
+    <div class="result-row">
+        <span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
+        <span class="text-green-bold">{ny_mnd_pris_ren:,.0f} kr/mnd</span>
+    </div>
+    <div class="border-bottom-dash"></div>
+    {fase1_rad_html}
+    <div style="margin-top: 6px; margin-bottom: 4px;">
+        <span class="text-light" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span>
+    </div>
+    {tidslinje_html}
+</div>
+''', unsafe_allow_html=True)
