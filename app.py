@@ -97,7 +97,7 @@ st.markdown("""
         box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
     }
 
-    /* Resultat-kort i Kundemodus */
+    /* Resultat-kort i Presentasjonsmodus */
     .result-box-presentation {
         background: linear-gradient(180deg, #0f172a 0%, #080f24 100%);
         border: 2px solid #38bdf8;
@@ -174,7 +174,7 @@ st.markdown("""
         align-items: center;
         font-weight: 800;
         font-size: 14px;
-        line-height: 1.2;
+        line-height: 1.15;
         white-space: nowrap;
         padding: 0 4px;
         overflow: hidden;
@@ -220,10 +220,10 @@ if "gjenstaende_mnd" not in st.session_state:
     st.session_state["gjenstaende_mnd"] = 0
 if "nedbetalingsmnd" not in st.session_state:
     st.session_state["nedbetalingsmnd"] = 24
-if "kundemodus" not in st.session_state:
-    st.session_state["kundemodus"] = False
+if "presentasjon" not in st.session_state:
+    st.session_state["presentasjon"] = False
 
-# Synchronize input keys
+# Synkroniser felt-nøkler
 for key in ["ny_tlf_pris", "innbytteverdi", "innbyttebonus", "gammel_mnd_pris", "gjenstaende_mnd"]:
     input_key = f"input_{key}"
     if input_key not in st.session_state:
@@ -281,7 +281,7 @@ with col_title:
     st.markdown('<div class="main-title">🔵 Innbyttekalkulator</div>', unsafe_allow_html=True)
 
 with col_toggle:
-    st.toggle("📺 Kundemodus", key="kundemodus")
+    st.toggle("📺 Presentasjon", key="presentasjon")
 
 with col_mnd_select:
     mnd_valg = st.radio(
@@ -295,8 +295,8 @@ with col_mnd_select:
 
 st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
-# INNDATAFELTER (KUN SYNLIG NÅR KUNDEMODUS ER AV)
-if not st.session_state["kundemodus"]:
+# INNDATAFELTER (KUN SYNLIG NÅR PRESENTASJON ER AV)
+if not st.session_state["presentasjon"]:
     with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
         lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=90)
         
@@ -403,11 +403,11 @@ total_mnd_fase_2 = ny_mnd_pris_ren
 
 har_fase1 = st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0
 
-row_class = "result-row-large" if st.session_state["kundemodus"] else "result-row"
-white_bold_class = "text-white-bold-lg" if st.session_state["kundemodus"] else "text-white-bold"
-green_bold_class = "text-green-bold-lg" if st.session_state["kundemodus"] else "text-green-bold"
-yellow_bold_class = "text-yellow-bold-lg" if st.session_state["kundemodus"] else "text-yellow-bold"
-box_class = "result-box-presentation" if st.session_state["kundemodus"] else "result-box"
+row_class = "result-row-large" if st.session_state["presentasjon"] else "result-row"
+white_bold_class = "text-white-bold-lg" if st.session_state["presentasjon"] else "text-white-bold"
+green_bold_class = "text-green-bold-lg" if st.session_state["presentasjon"] else "text-green-bold"
+yellow_bold_class = "text-yellow-bold-lg" if st.session_state["presentasjon"] else "text-yellow-bold"
+box_class = "result-box-presentation" if st.session_state["presentasjon"] else "result-box"
 
 fase1_rad = ""
 if har_fase1:
