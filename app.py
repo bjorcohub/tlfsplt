@@ -97,7 +97,7 @@ st.markdown("""
         box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
     }
 
-    /* Resultat-kort i Kundemodus (Større og ekstra luft) */
+    /* Resultat-kort i Kundemodus */
     .result-box-presentation {
         background: linear-gradient(180deg, #0f172a 0%, #080f24 100%);
         border: 2px solid #38bdf8;
@@ -223,9 +223,12 @@ if "nedbetalingsmnd" not in st.session_state:
 if "kundemodus" not in st.session_state:
     st.session_state["kundemodus"] = False
 
-# --- CALLBACK-FUNKSJONER FOR NULLSTILLING ---
+# --- CALLBACK-FUNKSJONER ---
 def reset_felt(nokkel, verdi=0):
     st.session_state[nokkel] = verdi
+
+def oppdater_felt(nokkel, input_key):
+    st.session_state[nokkel] = st.session_state[input_key]
 
 # --- FUNKSJON FOR TEKST-PARSING ---
 def parse_kopiert_tekst(tekst):
@@ -271,7 +274,7 @@ with col_title:
     st.markdown('<div class="main-title">🔵 Innbyttekalkulator</div>', unsafe_allow_html=True)
 
 with col_toggle:
-    kundemodus = st.toggle("📺 Kundemodus", key="kundemodus")
+    st.toggle("📺 Kundemodus", key="kundemodus")
 
 with col_mnd_select:
     mnd_valg = st.radio(
@@ -286,7 +289,7 @@ with col_mnd_select:
 st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 # INNDATAFELTER (KUN SYNLIG NÅR KUNDEMODUS ER AV)
-if not kundemodus:
+if not st.session_state["kundemodus"]:
     with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
         lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=90)
         
@@ -304,11 +307,14 @@ if not kundemodus:
     # 1. NY MOBIL PRIS
     col_p1, col_p2 = st.columns([11, 1])
     with col_p1:
-        ny_tlf_pris = st.number_input(
+        st.number_input(
             "1. NY MOBIL PRIS (KONTANT)", 
             min_value=0, 
-            key="ny_tlf_pris", 
-            step=500
+            value=int(st.session_state["ny_tlf_pris"]),
+            key="input_ny_tlf_pris", 
+            step=500,
+            on_change=oppdater_felt,
+            args=("ny_tlf_pris", "input_ny_tlf_pris")
         )
     with col_p2:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
@@ -318,22 +324,28 @@ if not kundemodus:
     col_in1, col_btn1, col_in2, col_btn2 = st.columns([5, 1, 5, 1])
 
     with col_in1:
-        innbytteverdi = st.number_input(
+        st.number_input(
             "2. INNBYTTEVERDI", 
             min_value=0, 
-            key="innbytteverdi", 
-            step=100
+            value=int(st.session_state["innbytteverdi"]),
+            key="input_innbytteverdi", 
+            step=100,
+            on_change=oppdater_felt,
+            args=("innbytteverdi", "input_innbytteverdi")
         )
     with col_btn1:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.button("🗑️", key="reset_innbytte", on_click=reset_felt, args=("innbytteverdi", 0))
 
     with col_in2:
-        innbyttebonus = st.number_input(
+        st.number_input(
             "3. INNBYTTEBONUS", 
             min_value=0, 
-            key="innbyttebonus", 
-            step=100
+            value=int(st.session_state["innbyttebonus"]),
+            key="input_innbyttebonus", 
+            step=100,
+            on_change=oppdater_felt,
+            args=("innbyttebonus", "input_innbyttebonus")
         )
     with col_btn2:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
@@ -342,13 +354,29 @@ if not kundemodus:
     # GAMMEL SPLITT
     c_g1, c_gbtn1, c_g2, c_gbtn2 = st.columns([5, 1, 5, 1])
     with c_g1:
-        gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
+        st.number_input(
+            "Gammel månedspris (kr/md)", 
+            min_value=0.0, 
+            value=float(st.session_state["gammel_mnd_pris"]),
+            key="input_gammel_mnd_pris", 
+            step=10.0,
+            on_change=oppdater_felt,
+            args=("gammel_mnd_pris", "input_gammel_mnd_pris")
+        )
     with c_gbtn1:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.button("🗑️", key="reset_gammel_pris", on_click=reset_felt, args=("gammel_mnd_pris", 0.0))
 
     with c_g2:
-        gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
+        st.number_input(
+            "Gjenstående måneder", 
+            min_value=0, 
+            value=int(st.session_state["gjenstaende_mnd"]),
+            key="input_gjenstaende_mnd", 
+            step=1,
+            on_change=oppdater_felt,
+            args=("gjenstaende_mnd", "input_gjenstaende_mnd")
+        )
     with c_gbtn2:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.button("🗑️", key="reset_gjenstaende", on_click=reset_felt, args=("gjenstaende_mnd", 0))
@@ -370,11 +398,11 @@ total_mnd_fase_2 = ny_mnd_pris_ren
 
 har_fase1 = st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0
 
-row_class = "result-row-large" if kundemodus else "result-row"
-white_bold_class = "text-white-bold-lg" if kundemodus else "text-white-bold"
-green_bold_class = "text-green-bold-lg" if kundemodus else "text-green-bold"
-yellow_bold_class = "text-yellow-bold-lg" if kundemodus else "text-yellow-bold"
-box_class = "result-box-presentation" if kundemodus else "result-box"
+row_class = "result-row-large" if st.session_state["kundemodus"] else "result-row"
+white_bold_class = "text-white-bold-lg" if st.session_state["kundemodus"] else "text-white-bold"
+green_bold_class = "text-green-bold-lg" if st.session_state["kundemodus"] else "text-green-bold"
+yellow_bold_class = "text-yellow-bold-lg" if st.session_state["kundemodus"] else "text-yellow-bold"
+box_class = "result-box-presentation" if st.session_state["kundemodus"] else "result-box"
 
 fase1_rad = ""
 if har_fase1:
