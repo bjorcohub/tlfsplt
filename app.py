@@ -4,80 +4,145 @@ import plotly.express as px
 from datetime import datetime
 import re
 
-# Sideoppsett med mørkt tema
+# Sideoppsett med mørkt tema og komprimert layout
 st.set_page_config(page_title="Innbyttekalkulator", layout="centered")
 
-# --- CSS STYLING ---
+# --- ULTRA-MODERNE PREMIUM CSS STYLING ---
 st.markdown("""
 <style>
+    /* Hovedbakgrunn */
     .stApp {
-        background-color: #0b1329;
-        color: #e2e8f0;
+        background: linear-gradient(135deg, #070c1e 0%, #0d162d 100%);
+        color: #f8fafc;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    
+
+    /* Skjul uønskede Streamlit-elementer */
+    #MainMenu, header, footer {visibility: hidden;}
+
+    /* Tittel-styling */
     .main-title {
-        color: #f59e0b;
-        font-weight: 700;
-        font-size: 26px;
+        color: #fbbf24;
+        font-weight: 800;
+        font-size: 28px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        letter-spacing: -0.5px;
     }
 
+    /* Container for hele appen */
+    .app-container {
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Form-labels */
     label, div[data-widget="radio"] label p, .stWidgetLabel p {
-        color: #e2e8f0 !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
+        color: #94a3b8 !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.8px !important;
+        margin-bottom: 6px !important;
     }
 
-    div[data-testid="stMarkdownContainer"] p {
-        color: #ffffff !important;
-    }
-
+    /* Input-felter styling med mørk glasstekstur */
     div[data-baseweb="input"] {
-        background-color: #111d38 !important;
-        border-color: #1e293b !important;
+        background-color: #1e293b !important;
+        border: 1px solid #334155 !important;
         color: #ffffff !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
+        transition: all 0.2s ease-in-out;
+    }
+
+    div[data-baseweb="input"]:focus-within {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
     }
 
     div[data-baseweb="input"] input {
         color: #ffffff !important;
-        font-weight: bold !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
     }
 
+    /* Radioknapper (24 mnd / 36 mnd velger) */
+    div[role="radiogroup"] {
+        background-color: #1e293b;
+        padding: 4px;
+        border-radius: 10px;
+        border: 1px solid #334155;
+    }
+
+    div[role="radiogroup"] label {
+        margin-right: 0px !important;
+        padding: 6px 12px !important;
+        border-radius: 8px !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] p {
+        color: #f8fafc !important;
+        font-size: 14px !important;
+    }
+
+    /* Expander styling (Gammel Splitt) */
+    .stExpander {
+        background-color: #1e293b !important;
+        border: 1px solid #334155 !important;
+        border-radius: 12px !important;
+        margin-top: 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* Resultat-kort (Match med referansebilde) */
     .result-box {
-        background-color: #0b1736;
-        border: 1px solid #1d3557;
-        border-radius: 12px;
-        padding: 20px;
-        margin-top: 15px;
+        background: linear-gradient(180deg, #0f172a 0%, #0b1329 100%);
+        border: 1.5px solid #1e3a8a;
+        border-radius: 16px;
+        padding: 24px;
+        margin-top: 20px;
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
     }
 
     .result-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 8px 0;
-        font-size: 16px;
+        padding: 10px 0;
+        font-size: 15px;
     }
 
     .border-bottom-dash {
-        border-bottom: 1px dashed #2a3a5e;
-        margin: 10px 0;
+        border-bottom: 1px dashed #334155;
+        margin: 12px 0;
     }
 
-    .text-light { color: #94a3b8; }
-    .text-white-bold { color: #ffffff; font-weight: bold; font-size: 20px; }
-    .text-green-bold { color: #10b981; font-weight: bold; font-size: 20px; }
-    .text-yellow-bold { color: #f59e0b; font-weight: bold; font-size: 20px; }
+    /* Farger på tall og nøkkelverdier */
+    .text-light { color: #94a3b8; font-weight: 500; }
+    .text-white-bold { color: #ffffff; font-weight: 800; font-size: 20px; }
+    .text-green-bold { color: #10b981; font-weight: 800; font-size: 20px; }
+    .text-yellow-bold { color: #fbbf24; font-weight: 800; font-size: 20px; }
 
+    /* Knappestyling */
     div.stButton > button {
         width: 100%;
-        border-radius: 8px;
-        background-color: #1e293b;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: white;
-        border: 1px solid #334155;
+        font-weight: 700;
+        border: none;
+        padding: 10px 16px;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);
+        transition: all 0.2s;
+    }
+
+    div.stButton > button:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.6);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -133,7 +198,7 @@ def parse_kopiert_tekst(tekst):
 
 # --- HOVED-GRENSESNITT ---
 
-# TOPPBAR
+# TOPPBAR (TITTEL + KNAPPER)
 col_title, col_mnd_select = st.columns([2, 1])
 
 with col_title:
@@ -149,13 +214,13 @@ with col_mnd_select:
         key="nedbetalingsmnd"
     )
 
-st.markdown("---")
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
 
-# EKSPANDERBAR FOR HENTING AV TEKST (PLASSERT FØR NUMBER_INPUT WIDGETENE)
+# EXPANDER FOR TEKST-LIMING
 with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
-    lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=100)
+    lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=90)
     
-    if st.button("📋 Hent ut fra tekst"):
+    if st.button("📋 Hent ut informasjonen fra teksten"):
         if lim_inn_tekst.strip():
             m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
             if m_pris is not None:
@@ -166,7 +231,7 @@ with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
                 st.session_state["gjenstaende_mnd"] = int(m_igjen)
             st.rerun()
 
-# INNDATAFELTER (TEGNES NÅ OPP ETTER AT PARSING ER HÅNDTERT)
+# INNDATAFELTER
 ny_tlf_pris = st.number_input(
     "1. NY MOBIL PRIS (KONTANT)", 
     min_value=0, 
@@ -212,6 +277,7 @@ total_mnd_fase_2 = ny_mnd_pris_ren
 # --- RESULTATKORT ---
 st.markdown('<div class="result-box">', unsafe_allow_html=True)
 
+# Rad 1: Effektiv sum
 st.markdown(f'''
 <div class="result-row">
     <span class="text-light">Effektiv ny mobil-sum etter innbytte:</span>
@@ -219,6 +285,7 @@ st.markdown(f'''
 </div>
 ''', unsafe_allow_html=True)
 
+# Rad 2: Ny mobil per mnd
 st.markdown(f'''
 <div class="result-row">
     <span class="text-light">Ny mobil per mnd ({mnd_valg} mnd Splitt):</span>
@@ -229,13 +296,15 @@ st.markdown(f'''
 st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
 
 if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
+    # Rad 3: Første periode
     st.markdown(f'''
     <div class="result-row">
-        <span class="text-light">Totalpris i første periode (inkl gammel Splitt avtale):</span>
+        <span class="text-light">Totalpris i første periode (inkl gammel Splitt):</span>
         <span class="text-yellow-bold">{total_mnd_fase_1:,.0f} kr/mnd (første {mnd_fase_1} mnd)</span>
     </div>
     ''', unsafe_allow_html=True)
 
+    # Rad 4: Resterende periode
     st.markdown(f'''
     <div class="result-row">
         <span class="text-light">Pris i resterende periode:</span>
@@ -246,16 +315,16 @@ if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd
 st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
 
 # VISUELL TIDSLINJE NEDERST
-st.markdown('<span class="text-light" style="font-size: 12px; font-weight: bold; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span>', unsafe_allow_html=True)
+st.markdown('<span class="text-light" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span>', unsafe_allow_html=True)
 
 if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
     tidslinje_faser = [
-        {"Fase": "F1", "Måneder": mnd_fase_1, "Farge": "Fase1", "Tekst": f"{total_mnd_fase_1:,.0f} kr/mnd<br><span style='font-size:11px;'>Første {mnd_fase_1} mnd</span>"},
-        {"Fase": "F2", "Måneder": mnd_fase_2, "Farge": "Fase2", "Tekst": f"{total_mnd_fase_2:,.0f} kr/mnd<br><span style='font-size:11px;'>Deretter {mnd_fase_2} mnd</span>"}
+        {"Fase": "F1", "Måneder": mnd_fase_1, "Farge": "Fase1", "Tekst": f"<b>{total_mnd_fase_1:,.0f} kr/mnd</b><br><span style='font-size:11px; font-weight: normal;'>Første {mnd_fase_1} mnd</span>"},
+        {"Fase": "F2", "Måneder": mnd_fase_2, "Farge": "Fase2", "Tekst": f"<b>{total_mnd_fase_2:,.0f} kr/mnd</b><br><span style='font-size:11px; font-weight: normal;'>Deretter {mnd_fase_2} mnd</span>"}
     ]
 else:
     tidslinje_faser = [
-        {"Fase": "F2", "Måneder": mnd_valg, "Farge": "Fase2", "Tekst": f"{ny_mnd_pris_ren:,.0f} kr/mnd<br><span style='font-size:11px;'>Hele perioden ({mnd_valg} mnd)</span>"}
+        {"Fase": "F2", "Måneder": mnd_valg, "Farge": "Fase2", "Tekst": f"<b>{ny_mnd_pris_ren:,.0f} kr/mnd</b><br><span style='font-size:11px; font-weight: normal;'>Hele perioden ({mnd_valg} mnd)</span>"}
     ]
 
 df_tidslinje = pd.DataFrame(tidslinje_faser)
@@ -267,12 +336,12 @@ fig = px.bar(
     color="Farge",
     orientation='h',
     text="Tekst",
-    color_discrete_map={"Fase1": "#f59e0b", "Fase2": "#10b981"}
+    color_discrete_map={"Fase1": "#fbbf24", "Fase2": "#10b981"}
 )
 
 fig.update_traces(
     textposition='inside',
-    textfont=dict(size=14, color='black', family="Arial Black"),
+    textfont=dict(size=14, color='#0f172a', family="Inter, sans-serif"),
     insidetextanchor='middle'
 )
 
@@ -281,8 +350,8 @@ fig.update_layout(
     showlegend=False,
     xaxis=dict(showgrid=False, showticklabels=False, title=""),
     yaxis=dict(showgrid=False, showticklabels=False, title=""),
-    height=80,
-    margin=dict(l=0, r=0, t=5, b=5),
+    height=75,
+    margin=dict(l=0, r=0, t=8, b=5),
     paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)'
 )
