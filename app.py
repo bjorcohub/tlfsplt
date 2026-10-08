@@ -264,7 +264,7 @@ with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
                 st.session_state["gjenstaende_mnd"] = int(m_igjen)
             st.rerun()
 
-# INNDATAFELTER MED TRYGG ON_CLICK CALLBACK FOR SØPPELBØTTER
+# INNDATAFELTER MED SØPPELBØTTER (UTEN HOVER-TEKST)
 
 # 1. NY MOBIL PRIS
 col_p1, col_p2 = st.columns([5, 1])
@@ -277,7 +277,7 @@ with col_p1:
     )
 with col_p2:
     st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_ny_tlf", help="Nullstill ny mobil-pris", on_click=reset_felt, args=("ny_tlf_pris", 0))
+    st.button("🗑️", key="reset_ny_tlf", on_click=reset_felt, args=("ny_tlf_pris", 0))
 
 # 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS
 col_in1, col_btn1, col_in2, col_btn2 = st.columns([5, 1, 5, 1])
@@ -291,7 +291,7 @@ with col_in1:
     )
 with col_btn1:
     st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_innbytte", help="Nullstill innbytteverdi", on_click=reset_felt, args=("innbytteverdi", 0))
+    st.button("🗑️", key="reset_innbytte", on_click=reset_felt, args=("innbytteverdi", 0))
 
 with col_in2:
     innbyttebonus = st.number_input(
@@ -302,7 +302,7 @@ with col_in2:
     )
 with col_btn2:
     st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_bonus", help="Nullstill innbyttebonus", on_click=reset_felt, args=("innbyttebonus", 0))
+    st.button("🗑️", key="reset_bonus", on_click=reset_felt, args=("innbyttebonus", 0))
 
 # GAMMEL SPLITT
 c_g1, c_gbtn1, c_g2, c_gbtn2 = st.columns([5, 1, 5, 1])
@@ -310,13 +310,13 @@ with c_g1:
     gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
 with c_gbtn1:
     st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_gammel_pris", help="Nullstill gammel månedspris", on_click=reset_felt, args=("gammel_mnd_pris", 0.0))
+    st.button("🗑️", key="reset_gammel_pris", on_click=reset_felt, args=("gammel_mnd_pris", 0.0))
 
 with c_g2:
     gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
 with c_gbtn2:
     st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-    st.button("🗑️", key="reset_gjenstaende", help="Nullstill gjenstående måneder", on_click=reset_felt, args=("gjenstaende_mnd", 0))
+    st.button("🗑️", key="reset_gjenstaende", on_click=reset_felt, args=("gjenstaende_mnd", 0))
 
 
 # --- BEREGNINGER ---
@@ -331,7 +331,7 @@ total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
 
-# --- RESULTATKORT ---
+# --- RESULTATKORT UTEN INNRYKK PÅ HTML ---
 
 har_fase1 = st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0
 
