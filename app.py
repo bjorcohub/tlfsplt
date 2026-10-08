@@ -79,15 +79,6 @@ st.markdown("""
         font-size: 14px !important;
     }
 
-    /* Expander styling */
-    .stExpander {
-        background-color: #1e293b !important;
-        border: 1px solid #334155 !important;
-        border-radius: 12px !important;
-        margin-top: 15px !important;
-        margin-bottom: 15px !important;
-    }
-
     /* Resultat-kort Standard */
     .result-box {
         background: linear-gradient(180deg, #0f172a 0%, #0b1329 100%);
@@ -298,22 +289,25 @@ st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 # INNDATAFELTER (KUN SYNLIG NÅR PRESENTASJON ER AV)
 if not st.session_state["presentasjon"]:
-    with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
-        lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=90)
-        
-        if st.button("📋 Hent ut informasjonen fra teksten"):
-            if lim_inn_tekst.strip():
-                m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
-                if m_pris is not None:
-                    st.session_state["gammel_mnd_pris"] = float(m_pris)
-                    st.session_state["input_gammel_mnd_pris"] = float(m_pris)
-                if i_verdi is not None:
-                    st.session_state["innbytteverdi"] = int(i_verdi)
-                    st.session_state["input_innbytteverdi"] = int(i_verdi)
-                if m_igjen is not None:
-                    st.session_state["gjenstaende_mnd"] = int(m_igjen)
-                    st.session_state["input_gjenstaende_mnd"] = int(m_igjen)
-                st.rerun()
+    # BOKS FOR TEKSTLIMING STÅR NÅ ÅPEN HELE TIDEN
+    st.markdown("<label>HENT INFORMASJON FRA KUNDEBILDE (VALGFRITT)</label>", unsafe_allow_html=True)
+    lim_inn_tekst = st.text_area("", placeholder="Lim inn tekst fra kundebildet her...", height=80, label_visibility="collapsed")
+    
+    if st.button("📋 Hent ut informasjonen fra teksten"):
+        if lim_inn_tekst.strip():
+            m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
+            if m_pris is not None:
+                st.session_state["gammel_mnd_pris"] = float(m_pris)
+                st.session_state["input_gammel_mnd_pris"] = float(m_pris)
+            if i_verdi is not None:
+                st.session_state["innbytteverdi"] = int(i_verdi)
+                st.session_state["input_innbytteverdi"] = int(i_verdi)
+            if m_igjen is not None:
+                st.session_state["gjenstaende_mnd"] = int(m_igjen)
+                st.session_state["input_gjenstaende_mnd"] = int(m_igjen)
+            st.rerun()
+
+    st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
     # 1. NY MOBIL PRIS
     col_p1, col_p2 = st.columns([11, 1])
@@ -330,7 +324,7 @@ if not st.session_state["presentasjon"]:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.button("🗑️", key="reset_ny_tlf", on_click=reset_felt, args=("ny_tlf_pris", 0))
 
-    # 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS (Endret step=500 på bonus)
+    # 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS
     col_in1, col_btn1, col_in2, col_btn2 = st.columns([5, 1, 5, 1])
 
     with col_in1:
@@ -351,7 +345,7 @@ if not st.session_state["presentasjon"]:
             "3. INNBYTTEBONUS", 
             min_value=0, 
             key="input_innbyttebonus", 
-            step=500,  # <--- Endret til 500 kr-intervaller
+            step=500,
             on_change=oppdater_felt,
             args=("innbyttebonus", "input_innbyttebonus")
         )
