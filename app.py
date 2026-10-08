@@ -275,7 +275,7 @@ def parse_kopiert_tekst(tekst):
 
 # --- HOVED-GRENSESNITT ---
 
-# TOPPBAR MED BREDE KOLONNER SLIK AT INGEN TEKST BLIR AVSKÅRET
+# TOPPBAR
 col_title, col_toggle, col_mnd_select = st.columns([1.8, 1.3, 0.9])
 
 with col_title:
@@ -330,7 +330,7 @@ if not st.session_state["presentasjon"]:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.button("🗑️", key="reset_ny_tlf", on_click=reset_felt, args=("ny_tlf_pris", 0))
 
-    # 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS
+    # 2. INNBYTTEVERDI OG 3. INNBYTTEBONUS (Endret step=500 på bonus)
     col_in1, col_btn1, col_in2, col_btn2 = st.columns([5, 1, 5, 1])
 
     with col_in1:
@@ -351,7 +351,7 @@ if not st.session_state["presentasjon"]:
             "3. INNBYTTEBONUS", 
             min_value=0, 
             key="input_innbyttebonus", 
-            step=100,
+            step=500,  # <--- Endret til 500 kr-intervaller
             on_change=oppdater_felt,
             args=("innbyttebonus", "input_innbyttebonus")
         )
