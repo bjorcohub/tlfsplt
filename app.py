@@ -120,10 +120,11 @@ st.markdown("""
     .timeline-container {
         display: flex;
         width: 100%;
-        height: 52px;
+        height: 54px;
         border-radius: 10px;
         overflow: hidden;
         margin-top: 10px;
+        background-color: #1e293b;
     }
 
     .timeline-bar-fase1 {
@@ -134,8 +135,12 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         font-weight: 800;
-        font-size: 14px;
-        line-height: 1.2;
+        font-size: 13px;
+        line-height: 1.15;
+        white-space: nowrap;
+        padding: 0 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .timeline-bar-fase2 {
@@ -146,12 +151,16 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         font-weight: 800;
-        font-size: 14px;
-        line-height: 1.2;
+        font-size: 13px;
+        line-height: 1.15;
+        white-space: nowrap;
+        padding: 0 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .timeline-subtext {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
         opacity: 0.85;
     }
@@ -264,10 +273,10 @@ with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
                 st.session_state["gjenstaende_mnd"] = int(m_igjen)
             st.rerun()
 
-# INNDATAFELTER MED SØPPELBØTTER (UTEN HOVER-TEKST)
+# INNDATAFELTER MED LINJERING OGSÅ PÅ TOPP-FELTET
 
-# 1. NY MOBIL PRIS
-col_p1, col_p2 = st.columns([5, 1])
+# 1. NY MOBIL PRIS (KORRIGERT FORHOLD SLIK AT DET FLUKTER HERT MED DE TODELEDE FELTENE UNDER)
+col_p1, col_p2 = st.columns([11, 1])
 with col_p1:
     ny_tlf_pris = st.number_input(
         "1. NY MOBIL PRIS (KONTANT)", 
@@ -350,14 +359,21 @@ if har_fase1:
 if har_fase1:
     p1 = (mnd_fase_1 / mnd_valg) * 100
     p2 = (mnd_fase_2 / mnd_valg) * 100
+    
+    # Sørg for at smale/korte perioder (f.eks. 1 mnd) har nok plass til teksten eller en ultrakompakt visning
+    tekst_fase1 = f"<span>{total_mnd_fase_1:,.0f} kr/mnd</span><span class=\"timeline-subtext\">Første {mnd_fase_1} mnd</span>" if p1 >= 18 else f"<span>{total_mnd_fase_1:,.0f}kr</span><span class=\"timeline-subtext\">{mnd_fase_1}m</span>"
+    tekst_fase2 = f"<span>{total_mnd_fase_2:,.0f} kr/mnd</span><span class=\"timeline-subtext\">Deretter {mnd_fase_2} mnd</span>" if p2 >= 18 else f"<span>{total_mnd_fase_2:,.0f}kr</span><span class=\"timeline-subtext\">{mnd_fase_2}m</span>"
+    
+    # Sätt min-width på minst 8% så teksten ikke skvises om det er f.eks. 1 mnd
+    p1_vis = max(8.0, p1) if p2 > 8 else min(92.0, p1)
+    p2_vis = 100.0 - p1_vis
+
     tidslinje_innhold = f"""<div class="timeline-container">
-<div class="timeline-bar-fase1" style="width: {p1}%;">
-<span>{total_mnd_fase_1:,.0f} kr/mnd</span>
-<span class="timeline-subtext">Første {mnd_fase_1} mnd</span>
+<div class="timeline-bar-fase1" style="width: {p1_vis}%;">
+{tekst_fase1}
 </div>
-<div class="timeline-bar-fase2" style="width: {p2}%;">
-<span>{total_mnd_fase_2:,.0f} kr/mnd</span>
-<span class="timeline-subtext">Deretter {mnd_fase_2} mnd</span>
+<div class="timeline-bar-fase2" style="width: {p2_vis}%;">
+{tekst_fase2}
 </div>
 </div>"""
 else:
