@@ -31,15 +31,6 @@ st.markdown("""
         letter-spacing: -0.5px;
     }
 
-    /* Container for hele appen */
-    .app-container {
-        background: #0f172a;
-        border: 1px solid #1e293b;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-    }
-
     /* Form-labels */
     label, div[data-widget="radio"] label p, .stWidgetLabel p {
         color: #94a3b8 !important;
@@ -101,7 +92,7 @@ st.markdown("""
     /* Resultat-kort (Match med referansebilde) */
     .result-box {
         background: linear-gradient(180deg, #0f172a 0%, #0b1329 100%);
-        border: 1.5px solid #1e3a8a;
+        border: 1.5px solid #1d3557;
         border-radius: 16px;
         padding: 24px;
         margin-top: 20px;
@@ -112,13 +103,13 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
+        padding: 8px 0;
         font-size: 15px;
     }
 
     .border-bottom-dash {
-        border-bottom: 1px dashed #334155;
-        margin: 12px 0;
+        border-bottom: 1px dashed #2a3a5e;
+        margin: 14px 0;
     }
 
     /* Farger på tall og nøkkelverdier */
@@ -151,7 +142,7 @@ st.markdown("""
 if "ny_tlf_pris" not in st.session_state:
     st.session_state["ny_tlf_pris"] = 15990
 if "innbytteverdi" not in st.session_state:
-    st.session_state["innbytteverdi"] = 0  # <--- Satt til 0 som default
+    st.session_state["innbytteverdi"] = 0
 if "innbyttebonus" not in st.session_state:
     st.session_state["innbyttebonus"] = 0
 if "gammel_mnd_pris" not in st.session_state:
@@ -274,7 +265,7 @@ total_mnd_fase_1 = ny_mnd_pris_ren + st.session_state["gammel_mnd_pris"]
 total_mnd_fase_2 = ny_mnd_pris_ren
 
 
-# --- RESULTATKORT ---
+# --- SAMLET RESULTATKORT OG TIDSLINJE I ÉN RAMME ---
 st.markdown('<div class="result-box">', unsafe_allow_html=True)
 
 # Rad 1: Effektiv sum
@@ -312,10 +303,10 @@ if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd
     </div>
     ''', unsafe_allow_html=True)
 
-st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="border-bottom-dash"></div>', unsafe_allow_html=True)
 
-# VISUELL TIDSLINJE NEDERST
-st.markdown('<span class="text-light" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span>', unsafe_allow_html=True)
+# VISUELL TIDSLINJE
+st.markdown('<div style="margin-top: 10px; margin-bottom: 8px;"><span class="text-light" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">VISUELL OVERSIKT OVER TIDSFORLØPET:</span></div>', unsafe_allow_html=True)
 
 if st.session_state["gammel_mnd_pris"] > 0 and st.session_state["gjenstaende_mnd"] > 0 and mnd_fase_2 > 0:
     tidslinje_faser = [
@@ -351,11 +342,12 @@ fig.update_layout(
     xaxis=dict(showgrid=False, showticklabels=False, title=""),
     yaxis=dict(showgrid=False, showticklabels=False, title=""),
     height=75,
-    margin=dict(l=0, r=0, t=8, b=5),
+    margin=dict(l=0, r=0, t=5, b=5),
     paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)'
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
+# LUKK RESULTATBOKSEN
 st.markdown('</div>', unsafe_allow_html=True)
