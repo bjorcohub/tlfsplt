@@ -133,6 +133,7 @@ def parse_kopiert_tekst(tekst):
 
 # --- HOVED-GRENSESNITT ---
 
+# TOPPBAR
 col_title, col_mnd_select = st.columns([2, 1])
 
 with col_title:
@@ -150,7 +151,22 @@ with col_mnd_select:
 
 st.markdown("---")
 
-# INNDATAFELTER
+# EKSPANDERBAR FOR HENTING AV TEKST (PLASSERT FØR NUMBER_INPUT WIDGETENE)
+with st.expander("▶ Har kunden gjenstående gammel Splitt? (Lim inn tekst)"):
+    lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=100)
+    
+    if st.button("📋 Hent ut fra tekst"):
+        if lim_inn_tekst.strip():
+            m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
+            if m_pris is not None:
+                st.session_state["gammel_mnd_pris"] = float(m_pris)
+            if i_verdi is not None:
+                st.session_state["innbytteverdi"] = int(i_verdi)
+            if m_igjen is not None:
+                st.session_state["gjenstaende_mnd"] = int(m_igjen)
+            st.rerun()
+
+# INNDATAFELTER (TEGNES NÅ OPP ETTER AT PARSING ER HÅNDTERT)
 ny_tlf_pris = st.number_input(
     "1. NY MOBIL PRIS (KONTANT)", 
     min_value=0, 
@@ -175,26 +191,11 @@ with col_in2:
         step=100
     )
 
-# EKSPANDERBAR FOR GAMMEL SPLITT / TEKSTLIMING
-with st.expander("▶ Har kunden gjenstående gammel Splitt?"):
-    lim_inn_tekst = st.text_area("Lim inn tekst fra kundebildet:", height=100)
-    
-    if st.button("📋 Hent ut fra tekst"):
-        if lim_inn_tekst.strip():
-            m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
-            if m_pris is not None:
-                st.session_state["gammel_mnd_pris"] = float(m_pris)
-            if i_verdi is not None:
-                st.session_state["innbytteverdi"] = int(i_verdi)
-            if m_igjen is not None:
-                st.session_state["gjenstaende_mnd"] = int(m_igjen)
-            st.rerun()
-
-    c_g1, c_g2 = st.columns(2)
-    with c_g1:
-        gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
-    with c_g2:
-        gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
+c_g1, c_g2 = st.columns(2)
+with c_g1:
+    gammel_mnd_pris = st.number_input("Gammel månedspris (kr/md)", min_value=0.0, key="gammel_mnd_pris", step=10.0)
+with c_g2:
+    gjenstaende_mnd = st.number_input("Gjenstående måneder", min_value=0, key="gjenstaende_mnd", step=1)
 
 # --- BEREGNINGER ---
 total_rabatt = st.session_state["innbytteverdi"] + st.session_state["innbyttebonus"]
