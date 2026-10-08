@@ -174,7 +174,7 @@ st.markdown("""
         align-items: center;
         font-weight: 800;
         font-size: 14px;
-        line-height: 1.15;
+        line-height: 1.2;
         white-space: nowrap;
         padding: 0 4px;
         overflow: hidden;
@@ -223,9 +223,16 @@ if "nedbetalingsmnd" not in st.session_state:
 if "kundemodus" not in st.session_state:
     st.session_state["kundemodus"] = False
 
+# Synchronize input keys
+for key in ["ny_tlf_pris", "innbytteverdi", "innbyttebonus", "gammel_mnd_pris", "gjenstaende_mnd"]:
+    input_key = f"input_{key}"
+    if input_key not in st.session_state:
+        st.session_state[input_key] = st.session_state[key]
+
 # --- CALLBACK-FUNKSJONER ---
 def reset_felt(nokkel, verdi=0):
     st.session_state[nokkel] = verdi
+    st.session_state[f"input_{nokkel}"] = verdi
 
 def oppdater_felt(nokkel, input_key):
     st.session_state[nokkel] = st.session_state[input_key]
@@ -298,10 +305,13 @@ if not st.session_state["kundemodus"]:
                 m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
                 if m_pris is not None:
                     st.session_state["gammel_mnd_pris"] = float(m_pris)
+                    st.session_state["input_gammel_mnd_pris"] = float(m_pris)
                 if i_verdi is not None:
                     st.session_state["innbytteverdi"] = int(i_verdi)
+                    st.session_state["input_innbytteverdi"] = int(i_verdi)
                 if m_igjen is not None:
                     st.session_state["gjenstaende_mnd"] = int(m_igjen)
+                    st.session_state["input_gjenstaende_mnd"] = int(m_igjen)
                 st.rerun()
 
     # 1. NY MOBIL PRIS
@@ -310,7 +320,6 @@ if not st.session_state["kundemodus"]:
         st.number_input(
             "1. NY MOBIL PRIS (KONTANT)", 
             min_value=0, 
-            value=int(st.session_state["ny_tlf_pris"]),
             key="input_ny_tlf_pris", 
             step=500,
             on_change=oppdater_felt,
@@ -327,7 +336,6 @@ if not st.session_state["kundemodus"]:
         st.number_input(
             "2. INNBYTTEVERDI", 
             min_value=0, 
-            value=int(st.session_state["innbytteverdi"]),
             key="input_innbytteverdi", 
             step=100,
             on_change=oppdater_felt,
@@ -341,7 +349,6 @@ if not st.session_state["kundemodus"]:
         st.number_input(
             "3. INNBYTTEBONUS", 
             min_value=0, 
-            value=int(st.session_state["innbyttebonus"]),
             key="input_innbyttebonus", 
             step=100,
             on_change=oppdater_felt,
@@ -357,7 +364,6 @@ if not st.session_state["kundemodus"]:
         st.number_input(
             "Gammel månedspris (kr/md)", 
             min_value=0.0, 
-            value=float(st.session_state["gammel_mnd_pris"]),
             key="input_gammel_mnd_pris", 
             step=10.0,
             on_change=oppdater_felt,
@@ -371,7 +377,6 @@ if not st.session_state["kundemodus"]:
         st.number_input(
             "Gjenstående måneder", 
             min_value=0, 
-            value=int(st.session_state["gjenstaende_mnd"]),
             key="input_gjenstaende_mnd", 
             step=1,
             on_change=oppdater_felt,
