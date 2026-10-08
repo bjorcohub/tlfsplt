@@ -6,7 +6,7 @@ import re
 
 # Sideoppsett
 st.set_page_config(page_title="Kalkulator for Nedbetaling & Innbytte", layout="wide")
-st.title("📱 Kalkulator for Nedbetaling & Innbytte")
+st.title("📱 Nedbetalingskalkulator")
 
 # --- INITIALISER DEFAULT-VERDIER I SESSION STATE ---
 if "gammel_mnd_pris" not in st.session_state:
@@ -40,13 +40,12 @@ def parse_kopiert_tekst(tekst):
         try:
             sluttdato = datetime.strptime(dato_match.group(2), "%d.%m.%Y")
             idag = datetime.now()
-            # Antall måneder mellom i dag og sluttdato
             differanse_mnd = (sluttdato.year - idag.year) * 12 + (sluttdato.month - idag.month)
             mnd_igjen = max(1, differanse_mnd)
         except Exception:
             pass
 
-    # Backup: Hvis datoberegning mislykkes, regn ut fra Gjenstående beløp / Månedspris
+    # Backup: Regn ut fra Gjenstående beløp / Månedspris
     if mnd_igjen is None and mnd_pris and mnd_pris > 0:
         gjen_match = re.search(r'Gjenstående[^\d]*(\d+[\.,]\d+|\d+)', tekst, re.IGNORECASE)
         if gjen_match:
@@ -57,7 +56,6 @@ def parse_kopiert_tekst(tekst):
 
 # --- SIDEMENY: Inndata ---
 st.sidebar.header("1. Ny Telefon")
-ny_tlf_navn = st.sidebar.text_input("Navn på ny telefon", "Ny Smarttelefon")
 ny_tlf_pris = st.sidebar.number_input("Totalpris på ny telefon (kr)", min_value=0, value=15000, step=500)
 ny_nedbetaling_mnd = st.sidebar.selectbox("Nedbetalingstid ny telefon (mnd)", [24, 36], index=0)
 
@@ -65,9 +63,9 @@ st.sidebar.markdown("---")
 st.sidebar.header("2. Eksisterende Avtale & Innbytte")
 
 # Tekstområde for å lim inn fra kundebilde
-lim_inn_tekst = st.sidebar.text_area("Lim inn tekst fra kundebildet her:", height=150)
+lim_inn_tekst = st.sidebar.text_area("Lim inn tekst fra kundebildet:", height=130)
 
-if st.sidebar.button("📋 Hent ut informasjonen fra teksten"):
+if st.sidebar.button("📋 Hent ut informasjonen"):
     if lim_inn_tekst.strip():
         m_pris, i_verdi, m_igjen = parse_kopiert_tekst(lim_inn_tekst)
         funnet = False
@@ -83,10 +81,10 @@ if st.sidebar.button("📋 Hent ut informasjonen fra teksten"):
             funnet = True
         
         if funnet:
-            st.sidebar.success("Informasjonen ble oppdatert!")
+            st.sidebar.success("Oppdatert!")
             st.rerun()
         else:
-            st.sidebar.warning("Fant ikke alle tall i teksten. Sjekk innholdet.")
+            st.sidebar.warning("Fant ikke alle tall i teksten.")
     else:
         st.sidebar.error("Vennligst lim inn teksten først.")
 
@@ -120,42 +118,37 @@ mnd_fase_2 = max(0, ny_nedbetaling_mnd - mnd_fase_1)
 total_mnd_fase_1 = ny_mnd_pris_ren + gammel_mnd_pris
 total_mnd_fase_2 = ny_mnd_pris_ren
 
-# --- VISNING AV NØKKELTALL ---
+# --- NØKKELTALL (KOMPAKT) ---
 col1, col2, col3 = st.columns(3)
-col1.metric("Ny Månedspris (Selve telefonen)", f"{ny_mnd_pris_ren:.2f} kr/md")
-col2.metric("Innbytterabatt", f"{innbytteverdi:,.0f} kr")
+col1.metric("Månedspris ny tlf", f"{ny_mnd_pris_ren:.2f} kr/md")
+col2.metric("Innbytteverdi", f"{innbytteverdi:,.0f} kr")
 col3.metric("Effektiv ny totalpris", f"{effektiv_ny_totalpris:,.0f} kr")
 
 st.markdown("---")
 
-# --- HORISONTAL DELE-VISNING (PERIODE 1 OG PERIODE 2) ---
-st.subheader("💳 Månedlig nedbetalingsplan for kunden")
+# --- HORISONTAL DELE-VISNING ---
+st.subheader("💳 Månedlig nedbetalingsplan")
 
 if gammel_mnd_pris > 0 and gjenstaende_mnd > 0 and mnd_fase_2 > 0:
     col_p1, col_p2 = st.columns(2)
     
     with col_p1:
-        st.error(f"### 1️⃣ Begge avtaler ({mnd_fase_1} mnd)")
-        st.markdown(f"## **{total_mnd_fase_1:,.2f} kr/md**")
-        st.write(f"**Varighet:** {mnd_fase_1} måneder")
-        st.caption(f"*(Ny telefon: {ny_mnd_pris_ren:.2f} kr + Gammel avtale: {gammel_mnd_pris:.2f} kr)*")
+        st.error(f"### Del 1 ({mnd_fase_1} mnd)")
+        st.markdown(f"# **{total_mnd_fase_1:,.2f} kr/md**")
+        st.caption(f"*(Ny tlf: {ny_mnd_pris_ren:.2f} kr + Gammel avtale: {gammel_mnd_pris:.2f} kr)*")
 
     with col_p2:
-        st.success(f"### 2️⃣ Resterende avtale ({mnd_fase_2} mnd)")
-        st.markdown(f"## **{total_mnd_fase_2:,.2f} kr/md**")
-        st.write(f"**Varighet:** {mnd_fase_2} måneder")
-        st.caption("*(Kun ny telefon etter at den gamle avtalen er utløpt)*")
-
-    st.markdown(f"### 📌 Oppsummert: **{mnd_fase_1} mnd {total_mnd_fase_1:,.0f} kr/md  ➔  {mnd_fase_2} mnd {total_mnd_fase_2:,.0f} kr/md**")
+        st.success(f"### Del 2 ({mnd_fase_2} mnd)")
+        st.markdown(f"# **{total_mnd_fase_2:,.2f} kr/md**")
+        st.caption("*(Kun ny tlf etter gammel avtale er utløpt)*")
 
 else:
-    st.success(f"### 1️⃣ Månedspris hele perioden ({ny_nedbetaling_mnd} mnd)")
-    st.markdown(f"## **{ny_mnd_pris_ren:,.2f} kr/md**")
-    st.write(f"**Varighet:** {ny_nedbetaling_mnd} måneder")
+    st.success(f"### Hele perioden ({ny_nedbetaling_mnd} mnd)")
+    st.markdown(f"# **{ny_mnd_pris_ren:,.2f} kr/md**")
 
 st.markdown("---")
 
-# --- STOLPEDIAGRAM ---
+# --- TETTSITTENDE GRAF / STOLPER ---
 tidslinje_data = []
 for mnd in range(1, ny_nedbetaling_mnd + 1):
     er_fase_1 = mnd <= gjenstaende_mnd
@@ -171,9 +164,17 @@ fig = px.bar(
     x="Måned", 
     y="Beløp", 
     color="Del", 
-    title="Visuell oversikt over månedlig belastning (kr)",
-    labels={"Beløp": "Kroner per måned", "Måned": "Måned i ny avtale"},
+    labels={"Beløp": "Kr/md", "Måned": ""},
     color_discrete_map={"Ny Telefon": "#0083B0", "Gammel Avtale": "#FF6B6B"}
 )
-fig.update_layout(barmode='stack', xaxis_tickangle=-45)
+
+# Gjøre stolpene helt tette og rense opp utseendet
+fig.update_layout(
+    barmode='stack', 
+    bargap=0.0,  # Fjerner mellomrom mellom månedene så stolpene slås helt sammen
+    xaxis_tickangle=-45,
+    margin=dict(l=10, r=10, t=10, b=10),
+    legend_title_text=""
+)
+
 st.plotly_chart(fig, use_container_width=True)
