@@ -1,9 +1,36 @@
 import streamlit as st
 from datetime import datetime
 import re
+import uuid
+import qrcode
+from io import BytesIO
+from supabase import create_client, Client
 
 # Sideoppsett med mørkt tema og komprimert layout
 st.set_page_config(page_title="Innbyttekalkulator", layout="centered")
+
+# --- SUPABASE KONFIGURASJON ---
+SUPABASE_URL = "https://pvjbjkfmjvucdvkkqrqx.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2amJqa2ZtanZ1Y2R2a2txcnF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MDUzNzgsImV4cCI6MjEwNzE4MTM3OH0.5nuxy3kmmqKKR8R6B5vwLUIhN_s4g-WhCfGowxpJphk"
+
+@st.cache_resource
+def init_supabase() -> Client:
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+try:
+    supabase = init_supabase()
+except Exception:
+    supabase = None
+
+# --- SJEKK OM APPEN ER ÅPNET VIA QR-KODE PÅ IPAD ---
+query_params = st.query_params
+url_rom = query_params.get("rom", None)
+
+if url_rom:
+    st.session_state["rom_id"] = url_rom
+    st.session_state["presentasjon"] = True
+elif "rom_id" not in st.session_state:
+    st.session_state["rom_id"] = str(uuid.uuid4())[:8]
 
 # --- ULTRA-MODERNE PREMIUM CSS STYLING ---
 st.markdown("""
@@ -231,13 +258,53 @@ for key in ["ny_tlf_pris", "innbytteverdi", "innbyttebonus", "gammel_mnd_pris", 
     if input_key not in st.session_state:
         st.session_state[input_key] = st.session_state[key]
 
+# --- FUNKSJONER FOR SUPABASE SYNKRONISERING ---
+def lagre_til_supabase():
+    if not supabase:
+        return
+    data_payload = {
+        "ny_tlf_pris": st.session_state["ny_tlf_pris"],
+        "innbytteverdi": st.session_state["innbytteverdi"],
+        "innbyttebonus": st.session_state["innbyttebonus"],
+        "gammel_mnd_pris": st.session_state["gammel_mnd_pris"],
+        "gjenstaende_mnd": st.session_state["gjenstaende_mnd"],
+        "nedbetalingsmnd": st.session_state["nedbetalingsmnd"]
+    }
+    try:
+        supabase.table("sesjoner").upsert({
+            "rom_id": st.session_state["rom_id"],
+            "data": data_payload
+        }).execute()
+    except Exception:
+        pass
+
+def hent_fra_supabase():
+    if not supabase or not url_rom:
+        return
+    try:
+        res = supabase.table("sesjoner").select("data").eq("rom_id", url_rom).execute()
+        if res.data and len(res.data) > 0:
+            d = res.data[0]["data"]
+            for k, v in d.items():
+                st.session_state[k] = v
+                if f"input_{k}" in st.session_state:
+                    st.session_state[f"input_{k}"] = v
+    except Exception:
+        pass
+
+# Hvis iPaden er i URL-rom modus, hent seneste data
+if url_rom:
+    hent_fra_supabase()
+
 # --- CALLBACK-FUNKSJONER ---
 def reset_felt(nokkel, verdi=0):
     st.session_state[nokkel] = verdi
     st.session_state[f"input_{nokkel}"] = verdi
+    lagre_til_supabase()
 
 def oppdater_felt(nokkel, input_key):
     st.session_state[nokkel] = st.session_state[input_key]
+    lagre_til_supabase()
 
 # --- FUNKSJON FOR TEKST-PARSING ---
 def parse_kopiert_tekst(tekst):
@@ -292,13 +359,29 @@ with col_mnd_select:
         index=0 if st.session_state["nedbetalingsmnd"] == 24 else 1,
         format_func=lambda x: f"{x} mnd",
         horizontal=True,
-        key="nedbetalingsmnd"
+        key="nedbetalingsmnd",
+        on_change=lagre_til_supabase
     )
 
 st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 # INNDATAFELTER (KUN SYNLIG NÅR PRESENTASJON ER AV)
 if not st.session_state["presentasjon"]:
+    # POPUP / DIALOG FOR QR-KODE TIL IPAD
+    with st.expander("📱 Koble til iPad (Generer QR-kode)"):
+        base_url = "https://tlfsplt.streamlit.app"  # Endre til din eksakte Streamlit URL dersom den er annerledes
+        ipad_url = f"{base_url}/?rom={st.session_state['rom_id']}"
+        
+        qr = qrcode.QRCode(version=1, box_size=6, border=2)
+        qr.add_data(ipad_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        buf = BytesIO()
+        img.save(buf)
+        st.image(buf.getvalue(), caption=f"Skann med iPad (Rom: {st.session_state['rom_id']})", width=200)
+        st.caption(f"Direkteleke: {ipad_url}")
+
     st.markdown("<label>HENT INFORMASJON FRA KUNDEBILDE (VALGFRITT)</label>", unsafe_allow_html=True)
     lim_inn_tekst = st.text_area("", placeholder="Lim inn tekst fra kundebildet her...", height=80, label_visibility="collapsed")
     
@@ -314,6 +397,7 @@ if not st.session_state["presentasjon"]:
             if m_igjen is not None:
                 st.session_state["gjenstaende_mnd"] = int(m_igjen)
                 st.session_state["input_gjenstaende_mnd"] = int(m_igjen)
+            lagre_til_supabase()
             st.rerun()
 
     st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
