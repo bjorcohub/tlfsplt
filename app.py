@@ -369,7 +369,7 @@ st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 if not st.session_state["presentasjon"]:
     # POPUP / DIALOG FOR QR-KODE TIL IPAD
     with st.expander("📱 Koble til iPad (Generer QR-kode)"):
-        base_url = "https://tlfsplt.streamlit.app"  # Endre til din eksakte Streamlit URL dersom den er annerledes
+        base_url = "https://tlfsplt-niwdwo3tq9p5zfiqphpbn7.streamlit.app"
         ipad_url = f"{base_url}/?rom={st.session_state['rom_id']}"
         
         qr = qrcode.QRCode(version=1, box_size=6, border=2)
@@ -380,7 +380,7 @@ if not st.session_state["presentasjon"]:
         buf = BytesIO()
         img.save(buf)
         st.image(buf.getvalue(), caption=f"Skann med iPad (Rom: {st.session_state['rom_id']})", width=200)
-        st.caption(f"Direkteleke: {ipad_url}")
+        st.caption(f"Direktelenke: {ipad_url}")
 
     st.markdown("<label>HENT INFORMASJON FRA KUNDEBILDE (VALGFRITT)</label>", unsafe_allow_html=True)
     lim_inn_tekst = st.text_area("", placeholder="Lim inn tekst fra kundebildet her...", height=80, label_visibility="collapsed")
