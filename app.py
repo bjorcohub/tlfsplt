@@ -5,6 +5,7 @@ import uuid
 import qrcode
 from io import BytesIO
 from supabase import create_client, Client
+from streamlit_autorefresh import st_autorefresh
 
 # Sideoppsett med mørkt tema og komprimert layout
 st.set_page_config(page_title="Innbyttekalkulator", layout="centered")
@@ -29,6 +30,8 @@ url_rom = query_params.get("rom", None)
 if url_rom:
     st.session_state["rom_id"] = url_rom
     st.session_state["presentasjon"] = True
+    # AUTOMATISK OPPDATERING PÅ IPAD (Hvert 2000 ms = 2. sekund)
+    st_autorefresh(interval=2000, key="ipad_autorefresh")
 elif "rom_id" not in st.session_state:
     st.session_state["rom_id"] = str(uuid.uuid4())[:8]
 
